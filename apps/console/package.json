@@ -1,0 +1,16 @@
+{
+  "name": "@nebula/console",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@nebula/core": "file:../../packages/core"
+  }
+}
