@@ -3,7 +3,7 @@
 NebulaStream is a production-ready, type-safe monorepo for building streaming platform services and apps.
 
 **Structure**
-- `apps/`: End-user applications.
+- `apps/`: End-user applications (console, backend-api).
 - `services/`: Backend services and APIs.
 - `packages/`: Shared libraries and cross-cutting utilities.
 - `infra/`: Infrastructure and deployment assets.
