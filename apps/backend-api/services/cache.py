@@ -5,6 +5,7 @@ Redis cache service
 import json
 from typing import Any, Optional
 import redis.asyncio as redis
+from fastapi.encoders import jsonable_encoder
 from core.config import settings
 from core.logging import get_logger
 
@@ -16,6 +17,12 @@ class CacheService:
     
     def __init__(self):
         self._redis: Optional[redis.Redis] = None
+
+    def _format_key(self, key: str) -> str:
+        prefix = (settings.CACHE_PREFIX or "").strip()
+        if not prefix:
+            return key
+        return f"{prefix}:{key}"
     
     async def connect(self):
         """Connect to Redis"""
@@ -52,9 +59,12 @@ class CacheService:
             return None
         
         try:
-            value = await self._redis.get(key)
+            value = await self._redis.get(self._format_key(key))
             if value:
                 return json.loads(value)
+            return None
+        except json.JSONDecodeError as e:
+            logger.warning("Cache decode error", key=key, error=str(e))
             return None
         except Exception as e:
             logger.warning("Cache get error", key=key, error=str(e))
@@ -66,8 +76,9 @@ class CacheService:
             return False
         
         try:
-            serialized = json.dumps(value, default=str)
-            await self._redis.setex(key, ttl, serialized)
+            payload = jsonable_encoder(value)
+            serialized = json.dumps(payload)
+            await self._redis.setex(self._format_key(key), ttl, serialized)
             return True
         except Exception as e:
             logger.warning("Cache set error", key=key, error=str(e))
@@ -79,7 +90,7 @@ class CacheService:
             return False
         
         try:
-            await self._redis.delete(key)
+            await self._redis.delete(self._format_key(key))
             return True
         except Exception as e:
             logger.warning("Cache delete error", key=key, error=str(e))
@@ -91,7 +102,8 @@ class CacheService:
             return 0
         
         try:
-            keys = await self._redis.keys(pattern)
+            full_pattern = self._format_key(pattern)
+            keys = await self._redis.keys(full_pattern)
             if keys:
                 return await self._redis.delete(*keys)
             return 0
@@ -105,7 +117,7 @@ class CacheService:
             return False
         
         try:
-            return await self._redis.exists(key) > 0
+            return await self._redis.exists(self._format_key(key)) > 0
         except Exception:
             return False
     
@@ -115,7 +127,7 @@ class CacheService:
             return 0
         
         try:
-            return await self._redis.incrby(key, amount)
+            return await self._redis.incrby(self._format_key(key), amount)
         except Exception as e:
             logger.warning("Cache increment error", key=key, error=str(e))
             return 0

@@ -64,6 +64,7 @@ class Settings(BaseSettings):
     ENABLE_RECOMMENDATIONS: bool = True
     
     # Cache TTL (seconds)
+    CACHE_PREFIX: str = "v2"
     CACHE_TTL_METADATA: int = 3600  # 1 hour
     CACHE_TTL_TRENDING: int = 1800  # 30 minutes
     CACHE_TTL_SEARCH: int = 300     # 5 minutes
