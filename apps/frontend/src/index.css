@@ -1,0 +1,182 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Poppins:wght@400;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* NebulaStream cinematic styles */
+@layer base {
+  * {
+    @apply box-border;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-dark-950 text-white antialiased;
+    font-family:
+      'Manrope',
+      system-ui,
+      -apple-system,
+      sans-serif;
+    background-image:
+      radial-gradient(60rem 60rem at 20% -10%, rgba(94, 230, 255, 0.08), transparent 60%),
+      radial-gradient(40rem 40rem at 80% 10%, rgba(229, 9, 20, 0.1), transparent 55%);
+  }
+
+  ::selection {
+    background: rgba(229, 9, 20, 0.3);
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-dark-900;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-dark-700 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-dark-600;
+  }
+}
+
+@layer components {
+  .hero-gradient {
+    background: linear-gradient(
+      to top,
+      rgba(11, 11, 15, 1) 10%,
+      rgba(11, 11, 15, 0.8) 35%,
+      rgba(11, 11, 15, 0.3) 70%,
+      rgba(11, 11, 15, 0) 100%
+    );
+  }
+
+  .glass-panel {
+    @apply bg-dark-900/60 backdrop-blur-xl border border-white/5 shadow-xl;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-full font-semibold text-white transition-all duration-300;
+    background: linear-gradient(135deg, #e50914, #b70710);
+    box-shadow: 0 10px 30px rgba(229, 9, 20, 0.25);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 40px rgba(229, 9, 20, 0.35);
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-full font-semibold text-white transition-all duration-300;
+    @apply bg-white/5 border border-white/10 backdrop-blur-md hover:bg-white/10;
+  }
+
+  .btn-nebula {
+    @apply btn-primary;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-full font-medium text-white/80 transition-all duration-300;
+    @apply hover:text-white hover:bg-white/10;
+  }
+
+  .badge-pill {
+    @apply inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs uppercase tracking-[0.3em] bg-white/10 text-white/70;
+  }
+
+  .nav-link {
+    @apply text-sm uppercase tracking-[0.2em] text-white/70 hover:text-white transition-colors;
+  }
+
+  .nav-link.active {
+    @apply text-white;
+  }
+
+  .movie-card {
+    @apply relative overflow-hidden rounded-2xl transition-all duration-300;
+    transform-origin: center;
+    will-change: transform;
+  }
+
+  .movie-card:hover {
+    @apply z-10;
+    transform: scale(1.06);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  }
+
+  .movie-card .movie-info {
+    @apply absolute inset-x-0 bottom-0 p-4 opacity-0 transition-opacity duration-300;
+    background: linear-gradient(to top, rgba(5, 5, 7, 0.95), rgba(5, 5, 7, 0));
+  }
+
+  .movie-card:hover .movie-info {
+    @apply opacity-100;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 bg-dark-900/80 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-nebula-500 focus:border-transparent transition-all;
+  }
+
+  .row-mask-left {
+    @apply absolute left-0 top-0 h-full w-24 bg-gradient-to-r from-dark-950 to-transparent pointer-events-none;
+  }
+
+  .row-mask-right {
+    @apply absolute right-0 top-0 h-full w-24 bg-gradient-to-l from-dark-950 to-transparent pointer-events-none;
+  }
+
+  .player-overlay {
+    @apply absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent opacity-0 transition-opacity duration-300;
+  }
+
+  .player-container:hover .player-overlay {
+    @apply opacity-100;
+  }
+}
+
+@layer utilities {
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .aspect-video {
+    aspect-ratio: 16 / 9;
+  }
+
+  .aspect-poster {
+    aspect-ratio: 2 / 3;
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .content-visibility-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: 300px 450px;
+  }
+}
