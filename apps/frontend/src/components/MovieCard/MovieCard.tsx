@@ -1,0 +1,126 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Play, Plus, Star, Check, Info } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { MovieListItem } from '../../types';
+import { useAuthStore } from '../../store/authStore';
+import { userApi } from '../../services/api';
+import toast from 'react-hot-toast';
+
+interface MovieCardProps {
+  movie: MovieListItem;
+  isFavorite?: boolean;
+  onFavoriteToggle?: () => void;
+  genreMap?: Record<number, string>;
+}
+
+const MovieCard: React.FC<MovieCardProps> = ({
+  movie,
+  isFavorite = false,
+  onFavoriteToggle,
+  genreMap,
+}) => {
+  const { isAuthenticated } = useAuthStore();
+
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      toast.error('Please sign in to add to your list');
+      return;
+    }
+
+    try {
+      if (isFavorite) {
+        await userApi.removeFavorite(movie.id);
+        toast.success('Removed from your list');
+      } else {
+        await userApi.addFavorite(movie.id);
+        toast.success('Added to your list');
+      }
+      onFavoriteToggle?.();
+    } catch (error) {
+      toast.error('Failed to update favorites');
+    }
+  };
+
+  const year = movie.release_date ? new Date(movie.release_date).getFullYear() : null;
+  const genres = movie.genre_ids
+    ?.map((id) => genreMap?.[id])
+    .filter(Boolean)
+    .slice(0, 2) as string[];
+
+  return (
+    <motion.div
+      whileHover={{ scale: 1.05 }}
+      transition={{ type: 'spring', stiffness: 240, damping: 20 }}
+    >
+      <Link to={`/movie/${movie.id}`} className="movie-card group content-visibility-auto">
+        <div className="aspect-poster relative overflow-hidden rounded-2xl bg-dark-800">
+          {movie.poster_path ? (
+            <img
+              src={movie.poster_path}
+              alt={movie.title}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              loading="lazy"
+              decoding="async"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-dark-800">
+              <span className="text-white/40 text-sm">No Image</span>
+            </div>
+          )}
+
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+          <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Link
+                  to={`/watch/${movie.id}`}
+                  className="w-10 h-10 rounded-full bg-white text-dark-950 flex items-center justify-center"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Play className="w-5 h-5 fill-current" />
+                </Link>
+                <button
+                  onClick={handleFavoriteClick}
+                  className="w-9 h-9 rounded-full border border-white/40 text-white flex items-center justify-center hover:bg-white hover:text-dark-950 transition"
+                >
+                  {isFavorite ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                </button>
+              </div>
+              <Link
+                to={`/movie/${movie.id}`}
+                className="w-9 h-9 rounded-full border border-white/30 text-white flex items-center justify-center hover:bg-white/10"
+              >
+                <Info className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-3">
+          <h3 className="text-white font-medium text-sm line-clamp-1 group-hover:text-nebula-500 transition-colors">
+            {movie.title}
+          </h3>
+          <div className="flex items-center justify-between mt-1 text-xs text-white/60">
+            <div className="flex items-center gap-2">
+              {year && <span>{year}</span>}
+              {genres && genres.length > 0 && (
+                <span className="text-white/50">• {genres.join(' / ')}</span>
+              )}
+            </div>
+            <div className="flex items-center gap-1">
+              <Star className="w-3 h-3 text-yellow-400 fill-current" />
+              <span>{movie.vote_average.toFixed(1)}</span>
+            </div>
+          </div>
+        </div>
+      </Link>
+    </motion.div>
+  );
+};
+
+export default MovieCard;
