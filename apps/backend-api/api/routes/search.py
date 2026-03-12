@@ -54,8 +54,8 @@ async def get_search_suggestions(
     cache_key = f"suggestions:{q}:{limit}"
     
     cached = await cache_service.get(cache_key)
-    if cached:
-        return cached
+    if cached is not None:
+        return {"query": q, "suggestions": cached}
     
     suggestions = await tmdb_service.get_search_suggestions(q, limit)
     await cache_service.set(cache_key, suggestions, ttl=settings.CACHE_TTL_SEARCH)
@@ -69,8 +69,8 @@ async def get_genres():
     cache_key = "genres:all"
     
     cached = await cache_service.get(cache_key)
-    if cached:
-        return cached
+    if cached is not None:
+        return {"genres": cached}
     
     genres = await tmdb_service.get_genres()
     await cache_service.set(cache_key, genres, ttl=settings.CACHE_TTL_METADATA)
