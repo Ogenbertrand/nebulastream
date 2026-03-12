@@ -1,33 +1,70 @@
-# Node
-node_modules/
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors/IDEs
+.vscode/
+.idea/
+*.iml
+
+# Logs
 *.log
+logs/
+
+# Node/Frontend
+node_modules/
+**/node_modules/
+.npm/
+.yarn/
+.pnp.*
+.cache/
+.vite/
+*.tsbuildinfo
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Build output
+# Frontend build output
+build/
 dist/
+
+# Python
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+.Python
+
+# Python virtual environments
+.venv/
+venv/
+**/.venv/
+**/venv/
+
+# Python tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
 coverage/
-*.tsbuildinfo
+htmlcov/
 
 # Env files
 .env
 .env.*
 
-# OS
-.DS_Store
-Thumbs.db
+# Rust
+target/
+**/target/
+*.rs.bk
 
-# Editors
-.vscode/
-.idea/
-
-# Python
-.venv/
-__pycache__/
-*.pyc
-*.egg-info/
-.mypy_cache/
-.ruff_cache/
-.pytest_cache/
+# Temporary files
+*.tmp
+*.swp
+*.swo
+.tmp/
+tmp/
