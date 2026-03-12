@@ -2,7 +2,10 @@
 Application configuration
 """
 
-from typing import List
+import json
+from typing import List, Any
+
+from pydantic import field_validator
 
 from pydantic_settings import BaseSettings
 
@@ -22,6 +25,29 @@ class Settings(BaseSettings):
         "http://localhost:5173",
         "http://127.0.0.1:3000",
     ]
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, value: Any) -> List[str]:
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return value
+        if isinstance(value, str):
+            raw = value.strip()
+            if not raw:
+                return []
+            if raw == "*":
+                return ["*"]
+            if raw.startswith("["):
+                try:
+                    parsed = json.loads(raw)
+                    if isinstance(parsed, list):
+                        return parsed
+                except json.JSONDecodeError:
+                    pass
+            return [item.strip() for item in raw.split(",") if item.strip()]
+        return value
     
     # Database
     DATABASE_URL: str = "postgresql://nebula:nebula123@localhost:5432/nebulastream"
