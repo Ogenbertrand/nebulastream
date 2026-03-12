@@ -3,9 +3,7 @@ Application configuration
 """
 
 import json
-from typing import List, Any
-
-from pydantic import field_validator
+from typing import List
 
 from pydantic_settings import BaseSettings
 
@@ -20,34 +18,23 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "info"
     
     # CORS
-    CORS_ORIGINS: List[str] = [
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:3000",
-    ]
+    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000"
 
-    @field_validator("CORS_ORIGINS", mode="before")
-    @classmethod
-    def parse_cors_origins(cls, value: Any) -> List[str]:
-        if value is None:
+    @property
+    def cors_origins_list(self) -> List[str]:
+        raw = (self.CORS_ORIGINS or "").strip()
+        if not raw:
             return []
-        if isinstance(value, list):
-            return value
-        if isinstance(value, str):
-            raw = value.strip()
-            if not raw:
-                return []
-            if raw == "*":
-                return ["*"]
-            if raw.startswith("["):
-                try:
-                    parsed = json.loads(raw)
-                    if isinstance(parsed, list):
-                        return parsed
-                except json.JSONDecodeError:
-                    pass
-            return [item.strip() for item in raw.split(",") if item.strip()]
-        return value
+        if raw == "*":
+            return ["*"]
+        if raw.startswith("["):
+            try:
+                parsed = json.loads(raw)
+                if isinstance(parsed, list):
+                    return parsed
+            except json.JSONDecodeError:
+                pass
+        return [item.strip() for item in raw.split(",") if item.strip()]
     
     # Database
     DATABASE_URL: str = "postgresql://nebula:nebula123@localhost:5432/nebulastream"
