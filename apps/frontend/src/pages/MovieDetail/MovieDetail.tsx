@@ -19,6 +19,28 @@ const MovieDetail: React.FC = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [recommendations, setRecommendations] = useState<MovieListItem[]>([]);
 
+  const renderCastCard = (actor: any) => (
+    <div key={actor.id} className="text-center">
+      <div className="aspect-square rounded-2xl overflow-hidden mb-2 bg-dark-800 border border-white/5">
+        {actor.profile_path ? (
+          <img
+            src={actor.profile_path}
+            alt={actor.name}
+            className="w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="text-white/40 text-xs">No Photo</span>
+          </div>
+        )}
+      </div>
+      <p className="text-white text-sm font-medium line-clamp-1">{actor.name}</p>
+      <p className="text-white/50 text-xs line-clamp-1">{actor.character}</p>
+    </div>
+  );
+
   useEffect(() => {
     if (id) {
       fetchMovieDetail(parseInt(id));
@@ -96,12 +118,12 @@ const MovieDetail: React.FC = () => {
       <div className="min-h-screen bg-dark-950">
         <button
           onClick={() => navigate(-1)}
-          className="fixed top-20 sm:top-24 left-4 sm:left-6 z-30 w-9 h-9 sm:w-10 sm:h-10 glass-panel rounded-full flex items-center justify-center text-white hover:bg-white/10 transition"
+          className="fixed top-4 left-4 sm:left-6 z-30 w-10 h-10 glass-panel rounded-full flex items-center justify-center text-white hover:bg-white/10 transition"
         >
           <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
 
-        <div className="relative h-[60vh] sm:h-[70vh] lg:h-[78vh] 2xl:h-[86vh] min-h-[420px] sm:min-h-[520px]">
+        <div className="relative h-[55vh] sm:h-[68vh] lg:h-[78vh] 2xl:h-[86vh] min-h-[380px] sm:min-h-[500px]">
           <div className="absolute inset-0">
             {movie.backdrop_path ? (
               <img
@@ -114,30 +136,31 @@ const MovieDetail: React.FC = () => {
             ) : (
               <div className="w-full h-full bg-dark-800" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-dark-950 via-dark-950/60 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-dark-950 via-dark-950/35 to-transparent" />
             <div className="absolute inset-0 bg-gradient-to-r from-dark-950 via-dark-950/30 to-transparent" />
           </div>
 
-          <div className="relative h-full max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 flex items-end pb-10 sm:pb-14 lg:pb-16">
-            <div className="flex flex-col lg:flex-row gap-6 sm:gap-10 items-start lg:items-end">
-              <div className="block lg:hidden w-28 sm:w-36">
-                <div className="aspect-poster rounded-2xl overflow-hidden shadow-2xl">
-                  {movie.poster_path ? (
-                    <img
-                      src={movie.poster_path}
-                      alt={movie.title}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-dark-800 flex items-center justify-center">
-                      <span className="text-white/40 text-xs">No Image</span>
-                    </div>
-                  )}
+          {/* Mobile poster thumbnail pinned to the hero image (top-left) */}
+          <div className="absolute right-4 top-4 z-20 w-20 sm:w-24 lg:hidden pointer-events-none">
+            <div className="aspect-poster rounded-2xl overflow-hidden shadow-2xl border border-white/10">
+              {movie.poster_path ? (
+                <img
+                  src={movie.poster_path}
+                  alt={movie.title}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
+              ) : (
+                <div className="w-full h-full bg-dark-800 flex items-center justify-center">
+                  <span className="text-white/40 text-xs">No Image</span>
                 </div>
-              </div>
+              )}
+            </div>
+          </div>
 
+          <div className="relative h-full max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 flex items-end pb-0 sm:pb-10 lg:pb-12">
+            <div className="relative flex flex-col lg:flex-row gap-6 sm:gap-10 items-start lg:items-end w-full">
               <div className="hidden lg:block w-60 2xl:w-72">
                 <div className="aspect-poster rounded-2xl overflow-hidden shadow-2xl">
                   {movie.poster_path ? (
@@ -156,12 +179,12 @@ const MovieDetail: React.FC = () => {
                 </div>
               </div>
 
-              <div className="max-w-2xl 2xl:max-w-3xl">
-                <h1 className="text-3xl sm:text-5xl 2xl:text-6xl font-display font-bold text-white mb-4">
+              <div className="max-w-2xl 2xl:max-w-3xl w-full">
+                <h1 className="text-3xl sm:text-5xl 2xl:text-6xl font-display font-bold text-white mb-2 sm:mb-4">
                   {movie.title}
                 </h1>
 
-                <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-white/70 mb-4">
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-white/70 mb-3 sm:mb-4">
                   <span className="flex items-center gap-1 text-green-400">
                     <Star className="w-4 h-4 fill-current" />
                     {movie.vote_average.toFixed(1)}
@@ -180,7 +203,7 @@ const MovieDetail: React.FC = () => {
                   )}
                 </div>
 
-                <div className="flex flex-wrap gap-2 mb-6">
+                <div className="flex flex-wrap gap-2 mb-4 sm:mb-6">
                   {movie.genres?.map((genre) => (
                     <span
                       key={genre.id}
@@ -191,7 +214,7 @@ const MovieDetail: React.FC = () => {
                   ))}
                 </div>
 
-                <div className="flex flex-wrap gap-3 sm:gap-4 mb-6">
+                <div className="flex flex-wrap gap-3 sm:gap-4 mb-4 sm:mb-6">
                   <Link to={`/watch/${movie.id}`} className="btn-primary">
                     <Play className="w-5 h-5 mr-2 fill-current" />
                     Play
@@ -214,46 +237,41 @@ const MovieDetail: React.FC = () => {
                     Share
                   </button>
                 </div>
-
-                {movie.tagline && (
-                  <p className="text-base sm:text-lg text-white/60 italic mb-3">{movie.tagline}</p>
-                )}
-                <p className="text-white/80 leading-relaxed text-sm sm:text-base">
-                  {movie.overview}
-                </p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-10 sm:py-12">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-10 sm:py-12 pb-28 md:pb-12">
+          {(movie.tagline || movie.overview) && (
+            <section className="mb-10">
+              <div className="glass-panel rounded-3xl p-5 sm:p-7">
+                <h2 className="text-white font-semibold text-lg mb-3">Story</h2>
+                {movie.tagline && (
+                  <p className="text-white/70 italic mb-3">{movie.tagline}</p>
+                )}
+                {movie.overview && (
+                  <p className="text-white/80 leading-relaxed text-sm sm:text-base">
+                    {movie.overview}
+                  </p>
+                )}
+              </div>
+            </section>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
             <div className="lg:col-span-2 space-y-10">
               {movie.cast && movie.cast.length > 0 && (
                 <section>
                   <h2 className="text-2xl font-semibold text-white mb-6">Cast</h2>
-                  <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
-                    {movie.cast.slice(0, 8).map((actor) => (
-                      <div key={actor.id} className="text-center">
-                        <div className="aspect-square rounded-2xl overflow-hidden mb-2 bg-dark-800">
-                          {actor.profile_path ? (
-                            <img
-                              src={actor.profile_path}
-                              alt={actor.name}
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                              decoding="async"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <span className="text-white/40 text-xs">No Photo</span>
-                            </div>
-                          )}
-                        </div>
-                        <p className="text-white text-sm font-medium">{actor.name}</p>
-                        <p className="text-white/50 text-xs">{actor.character}</p>
-                      </div>
-                    ))}
+                  <div className="lg:hidden overflow-x-auto pb-3 -mx-1">
+                    <div className="grid grid-rows-2 auto-cols-[140px] grid-flow-col gap-3 px-1">
+                      {movie.cast.slice(0, 12).map((actor) => renderCastCard(actor))}
+                    </div>
+                  </div>
+
+                  <div className="hidden lg:grid grid-cols-4 xl:grid-cols-5 gap-4">
+                    {movie.cast.slice(0, 15).map((actor) => renderCastCard(actor))}
                   </div>
                 </section>
               )}

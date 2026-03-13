@@ -54,7 +54,7 @@ async def get_continue_watching(
         select(WatchHistory)
         .where(
             WatchHistory.user_id == current_user.id,
-            WatchHistory.is_completed == False,
+            WatchHistory.is_completed == 0,
             WatchHistory.progress_seconds > 0
         )
         .order_by(desc(WatchHistory.updated_at))

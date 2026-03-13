@@ -7,6 +7,7 @@ import { useAuthStore } from './store/authStore';
 
 const Home = React.lazy(() => import('./pages/Home/Home'));
 const Browse = React.lazy(() => import('./pages/Browse/Browse'));
+const FilterPage = React.lazy(() => import('./pages/Filter/Filter'));
 const Search = React.lazy(() => import('./pages/Search/Search'));
 const MovieDetail = React.lazy(() => import('./pages/MovieDetail/MovieDetail'));
 const Player = React.lazy(() => import('./pages/Player/Player'));
@@ -39,6 +40,7 @@ function App() {
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="browse" element={<Browse />} />
+            <Route path="filter" element={<FilterPage />} />
             <Route path="search" element={<Search />} />
             <Route path="movie/:id" element={<MovieDetail />} />
             <Route path="watch/:id" element={<Player />} />

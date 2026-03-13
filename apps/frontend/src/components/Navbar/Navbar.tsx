@@ -1,6 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Bell, ChevronDown, Menu, Search, X, User, LogOut, Heart, Film } from 'lucide-react';
+import {
+  Bell,
+  ChevronDown,
+  Menu,
+  Search,
+  X,
+  User,
+  LogOut,
+  Heart,
+  Film,
+  Home,
+  Tv2,
+  Flame,
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../../store/authStore';
 
@@ -120,7 +133,7 @@ const Navbar: React.FC = () => {
             </button>
 
             {isAuthenticated ? (
-              <div className="relative group">
+              <div className="relative group hidden md:block">
                 <button className="flex items-center gap-2 p-2 rounded-full bg-white/5 hover:bg-white/10 transition">
                   {user?.avatar_url ? (
                     <img
@@ -164,7 +177,7 @@ const Navbar: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <Link to="/login" className="btn-primary text-sm">
+              <Link to="/login" className="btn-primary text-sm hidden md:inline-flex">
                 Sign In
               </Link>
             )}
@@ -179,24 +192,147 @@ const Navbar: React.FC = () => {
         </div>
       </div>
 
+      {/* Mobile search bar (hidden on watchlist/profile) */}
+      {!(location.pathname.startsWith('/watchlist') || location.pathname.startsWith('/profile')) && (
+        <div className="px-4 pb-3 md:hidden">
+          <form onSubmit={handleSearch} className="relative">
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search movies & TV shows"
+              className="w-full pl-10 pr-10 py-2.5 rounded-full bg-dark-900/90 border border-white/10 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-nebula-500"
+            />
+            <Search className="w-4 h-4 text-white/50 absolute left-3 top-2.5" />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-2.5 text-white/60 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </form>
+        </div>
+      )}
+
       {isMobileMenuOpen && (
         <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          className="lg:hidden border-t border-white/5 bg-dark-950/95 backdrop-blur-xl"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-40 lg:hidden"
         >
-          <div className="px-4 sm:px-6 py-4 flex flex-col gap-3">
-            {navLinks.map((link) => (
+          {/* Backdrop */}
+          <button
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            aria-label="Close menu"
+          />
+
+          {/* Sidebar */}
+          <motion.div
+            initial={{ x: -320 }}
+            animate={{ x: 0 }}
+            exit={{ x: -320 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 30 }}
+            className="relative h-full w-[82%] max-w-xs bg-dark-950 border-r border-white/10 shadow-2xl flex flex-col"
+          >
+            {/* Header */}
+            <div className="px-4 pt-4 pb-3 border-b border-white/10 flex items-center justify-between">
               <Link
-                key={link.to}
-                to={link.to}
+                to="/"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-white/80 hover:text-white"
+                className="flex items-center gap-3"
               >
-                {link.label}
+                <div className="w-9 h-9 rounded-2xl bg-nebula-500/20 border border-nebula-500/40 flex items-center justify-center">
+                  <Film className="w-4 h-4 text-nebula-500" />
+                </div>
+                <div className="leading-tight text-left">
+                  <span className="text-white font-display text-base tracking-wide">
+                    NebulaStream
+                  </span>
+                  <span className="block text-[9px] uppercase tracking-[0.35em] text-white/50">
+                    CINEMA
+                  </span>
+                </div>
               </Link>
-            ))}
-          </div>
+
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-white"
+                aria-label="Close menu"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Search bar inside sidebar */}
+            <div className="px-4 pt-3 pb-2 border-b border-white/5">
+              <form onSubmit={handleSearch} className="relative">
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search movies & TV shows"
+                  className="w-full pl-10 pr-10 py-2.5 rounded-full bg-dark-900/90 border border-white/10 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-nebula-500"
+                />
+                <Search className="w-4 h-4 text-white/50 absolute left-3 top-2.5" />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-2.5 text-white/60 hover:text-white"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </form>
+            </div>
+
+            {/* Navigation links */}
+            <div className="flex-1 overflow-y-auto px-2 py-2">
+              <nav className="space-y-1">
+                {navLinks.map((link) => {
+                  const Icon =
+                    link.label === 'Home'
+                      ? Home
+                      : link.label === 'Movies'
+                      ? Film
+                      : link.label === 'TV Shows'
+                      ? Tv2
+                      : link.label === 'Trending'
+                      ? Flame
+                      : Heart;
+
+                  const isActive = location.pathname === link.to;
+
+                  return (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${
+                        isActive
+                          ? 'bg-nebula-500/15 text-nebula-100'
+                          : 'text-white/80 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      <span
+                        className={`flex h-8 w-8 items-center justify-center rounded-full border ${
+                          isActive
+                            ? 'border-nebula-500/60 bg-nebula-500/10 text-nebula-200'
+                            : 'border-white/10 bg-white/5 text-white/70'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4" />
+                      </span>
+                      <span>{link.label}</span>
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+          </motion.div>
         </motion.div>
       )}
     </nav>
