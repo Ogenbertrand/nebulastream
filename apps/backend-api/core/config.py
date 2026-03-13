@@ -48,6 +48,18 @@ class Settings(BaseSettings):
     TMDB_API_KEY: str = ""
     TMDB_BASE_URL: str = "https://api.themoviedb.org/3"
     TMDB_IMAGE_BASE_URL: str = "https://image.tmdb.org/t/p"
+
+    # OMDb API
+    OMDB_API_KEY: str = ""
+    OMDB_BASE_URL: str = "https://www.omdbapi.com"
+
+    # Trakt API
+    TRAKT_CLIENT_ID: str = ""
+    TRAKT_BASE_URL: str = "https://api.trakt.tv"
+
+    # Watchmode API
+    WATCHMODE_API_KEY: str = ""
+    WATCHMODE_BASE_URL: str = "https://api.watchmode.com/v1"
     
     # JWT Authentication
     JWT_SECRET: str = "your-super-secret-jwt-key-change-in-production"

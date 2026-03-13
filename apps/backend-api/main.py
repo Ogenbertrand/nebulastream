@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import ORJSONResponse
 
-from api.routes import auth, health, movies, search, streams, users, watch_history
+from api.routes import auth, health, movies, search, streams, users, watch_history, aggregated_movies
 from core.config import settings
 from core.database import engine, init_db
 from services.cache import cache_service
@@ -69,6 +69,7 @@ app.include_router(search.router, prefix="/search", tags=["Search"])
 app.include_router(streams.router, prefix="/streams", tags=["Streams"])
 app.include_router(users.router, prefix="/users", tags=["Users"])
 app.include_router(watch_history.router, prefix="/watch-history", tags=["Watch History"])
+app.include_router(aggregated_movies.router, tags=["Aggregated Movies"])
 
 
 @app.get("/")
