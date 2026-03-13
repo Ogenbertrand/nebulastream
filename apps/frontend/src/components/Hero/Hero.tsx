@@ -180,7 +180,11 @@ const Hero: React.FC = () => {
         onClick={() => setIsMuted((prev) => !prev)}
         className="absolute bottom-4 right-4 sm:bottom-8 sm:right-8 w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition"
       >
-        {isMuted ? <VolumeX className="w-4 h-4 sm:w-5 sm:h-5" /> : <Volume2 className="w-4 h-4 sm:w-5 sm:h-5" />}
+        {isMuted ? (
+          <VolumeX className="w-4 h-4 sm:w-5 sm:h-5" />
+        ) : (
+          <Volume2 className="w-4 h-4 sm:w-5 sm:h-5" />
+        )}
       </button>
     </div>
   );
