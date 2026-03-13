@@ -3,6 +3,7 @@ TMDB (The Movie Database) API service
 """
 
 from typing import List, Optional, Dict, Any
+from datetime import date
 import httpx
 from core.config import settings
 from core.logging import get_logger
@@ -39,6 +40,15 @@ class TMDBService:
         if not path:
             return None
         return f"{self.image_base_url}/{size}{path}"
+
+    def _parse_date(self, value: Optional[str]) -> Optional[date]:
+        """Parse TMDB date strings safely"""
+        if not value:
+            return None
+        try:
+            return date.fromisoformat(value)
+        except ValueError:
+            return None
     
     def _movie_to_list_item(self, data: Dict[str, Any]) -> MovieList:
         """Convert TMDB movie to MovieList schema"""
@@ -48,7 +58,7 @@ class TMDBService:
             poster_path=self._get_image_url(data.get("poster_path"), "w500"),
             backdrop_path=self._get_image_url(data.get("backdrop_path"), "original"),
             vote_average=data.get("vote_average", 0),
-            release_date=data.get("release_date"),
+            release_date=self._parse_date(data.get("release_date")),
             genre_ids=data.get("genre_ids", [])
         )
     
@@ -221,7 +231,7 @@ class TMDBService:
             tagline=data.get("tagline"),
             poster_path=self._get_image_url(data.get("poster_path"), "w500"),
             backdrop_path=self._get_image_url(data.get("backdrop_path"), "original"),
-            release_date=data.get("release_date"),
+            release_date=self._parse_date(data.get("release_date")),
             runtime=data.get("runtime"),
             vote_average=data.get("vote_average", 0),
             vote_count=data.get("vote_count", 0),
