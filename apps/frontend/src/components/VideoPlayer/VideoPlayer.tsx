@@ -1,5 +1,5 @@
-import React, { useRef, useEffect, useState, useMemo } from 'react';
-import ReactPlayer from 'react-player';
+import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
+import Hls from 'hls.js';
 import {
   Play,
   Pause,
@@ -31,7 +31,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   posterUrl,
   backdropUrl,
 }) => {
-  const playerRef = useRef<ReactPlayer>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const hlsRef = useRef<Hls | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
   const hasSeekedInitial = useRef(false);
@@ -46,31 +47,40 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [selectedSource, setSelectedSource] = useState<StreamSource | null>(null);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isBuffering, setIsBuffering] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [selectedSubtitle, setSelectedSubtitle] = useState<Subtitle | null>(null);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const [hoverLeft, setHoverLeft] = useState(0);
   const [playerError, setPlayerError] = useState<string | null>(null);
 
-  // Select best source on mount
+  const sortedSources = useMemo(() => {
+    if (!sources.length) return [];
+    const typeOrder: Record<string, number> = { hls: 0, direct: 1, embed: 2 };
+    const qualityOrder: Record<string, number> = { '4k': 4, '1080p': 3, '720p': 2, '480p': 1 };
+    return [...sources].sort((a, b) => {
+      const typeDiff = (typeOrder[a.stream_type] ?? 3) - (typeOrder[b.stream_type] ?? 3);
+      if (typeDiff !== 0) return typeDiff;
+      const qualityDiff =
+        (qualityOrder[b.quality as keyof typeof qualityOrder] || 0) -
+        (qualityOrder[a.quality as keyof typeof qualityOrder] || 0);
+      if (qualityDiff !== 0) return qualityDiff;
+      return (b.reliability_score || 0) - (a.reliability_score || 0);
+    });
+  }, [sources]);
+
+  // Prefer direct streams first
   useEffect(() => {
-    if (sources.length > 0 && !selectedSource) {
-      // Prefer higher quality sources
-      const sorted = [...sources].sort((a, b) => {
-        const qualityOrder = { '4k': 4, '1080p': 3, '720p': 2, '480p': 1 };
-        return (
-          (qualityOrder[b.quality as keyof typeof qualityOrder] || 0) -
-          (qualityOrder[a.quality as keyof typeof qualityOrder] || 0)
-        );
-      });
-      setSelectedSource(sorted[0]);
+    if (sortedSources.length > 0 && !selectedSource) {
+      setSelectedSource(sortedSources[0]);
     }
-  }, [sources, selectedSource]);
+  }, [sortedSources, selectedSource]);
 
   useEffect(() => {
     setSelectedSubtitle(null);
     setPlayerError(null);
     setIsBuffering(false);
+    setIsInitializing(false);
   }, [selectedSource?.url]);
 
   // Hide controls after inactivity
@@ -108,8 +118,107 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
+  const isEmbedSource = selectedSource?.stream_type === 'embed';
+  const isHlsSource = selectedSource?.stream_type === 'hls';
+
+  const handlePlayerError = useCallback(() => {
+    setIsBuffering(false);
+    setIsInitializing(false);
+
+    const currentIndex = sortedSources.findIndex((source) => source.url === selectedSource?.url);
+    const nextSource = currentIndex >= 0 ? sortedSources[currentIndex + 1] : null;
+
+    if (nextSource) {
+      setSelectedSource(nextSource);
+      return;
+    }
+
+    setPlayerError('This stream could not be played. Try another source.');
+  }, [sortedSources, selectedSource]);
+
+  // Initialize stream playback when source changes
+  useEffect(() => {
+    if (!selectedSource || isEmbedSource) return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    setIsInitializing(true);
+    setIsBuffering(true);
+
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
+    }
+
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+
+    if (isHlsSource) {
+      if (Hls.isSupported()) {
+        const hls = new Hls({ enableWorker: true });
+        hlsRef.current = hls;
+
+        hls.on(Hls.Events.ERROR, (_, data) => {
+          if (data.fatal) {
+            handlePlayerError();
+          }
+        });
+
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+          hls.loadSource(selectedSource.url);
+        });
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = selectedSource.url;
+      } else {
+        handlePlayerError();
+        return;
+      }
+    } else {
+      video.src = selectedSource.url;
+    }
+
+    video.preload = 'metadata';
+    video.load();
+
+    if (isPlaying) {
+      video.play().catch(() => {
+        setIsPlaying(false);
+      });
+    }
+
+    return () => {
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+    };
+  }, [selectedSource, isEmbedSource, isHlsSource, isPlaying, handlePlayerError]);
+
+  useEffect(() => {
+    if (isEmbedSource) return;
+    const video = videoRef.current;
+    if (!video) return;
+    video.volume = isMuted ? 0 : volume;
+    video.muted = isMuted;
+    video.playbackRate = playbackRate;
+  }, [isEmbedSource, isMuted, playbackRate, volume]);
+
   const handlePlayPause = () => {
-    setIsPlaying(!isPlaying);
+    if (isEmbedSource) return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (isPlaying) {
+      video.pause();
+      setIsPlaying(false);
+    } else {
+      video
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false));
+    }
   };
 
   const toggleSettings = () => {
@@ -127,29 +236,34 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     setIsMuted(!isMuted);
   };
 
-  const handleProgress = (state: { played: number; playedSeconds: number }) => {
-    setProgress(state.playedSeconds);
-    onProgress?.(state.playedSeconds, duration);
+  const handleTimeUpdate = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    setProgress(video.currentTime);
+    onProgress?.(video.currentTime, video.duration || duration);
   };
 
-  const handleDuration = (dur: number) => {
-    setDuration(dur);
-    if (!playerRef.current) return;
+  const handleLoadedMetadata = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    setDuration(video.duration || 0);
 
     if (!hasSeekedInitial.current && initialProgress > 0) {
       hasSeekedInitial.current = true;
-      playerRef.current.seekTo(initialProgress, 'seconds');
+      video.currentTime = initialProgress;
       return;
     }
 
     if (progress > 0) {
-      playerRef.current.seekTo(progress, 'seconds');
+      video.currentTime = progress;
     }
   };
 
   const handleSeek = (newTime: number) => {
+    const video = videoRef.current;
+    if (!video) return;
     setProgress(newTime);
-    playerRef.current?.seekTo(newTime, 'seconds');
+    video.currentTime = newTime;
   };
 
   const handleFullscreen = () => {
@@ -161,8 +275,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   const handleSkip = (seconds: number) => {
-    const newTime = Math.max(0, Math.min(duration, progress + seconds));
-    playerRef.current?.seekTo(newTime, 'seconds');
+    const video = videoRef.current;
+    if (!video) return;
+    const totalDuration = video.duration || duration;
+    const newTime = Math.max(0, Math.min(totalDuration, video.currentTime + seconds));
+    video.currentTime = newTime;
     setProgress(newTime);
   };
 
@@ -180,20 +297,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const progressPercent = duration > 0 ? (progress / duration) * 100 : 0;
   const availableSubtitles = useMemo(() => selectedSource?.subtitles || [], [selectedSource]);
   const previewImage = backdropUrl || posterUrl;
-  const isEmbedSource = selectedSource?.stream_type === 'embed';
-
-  const handlePlayerError = () => {
-    setIsBuffering(false);
-    const currentIndex = sources.findIndex((source) => source.url === selectedSource?.url);
-    const nextSource = currentIndex >= 0 ? sources[currentIndex + 1] : null;
-
-    if (nextSource) {
-      setSelectedSource(nextSource);
-      return;
-    }
-
-    setPlayerError('This stream could not be played. Try another source.');
-  };
 
   const handleProgressHover = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!progressBarRef.current || duration === 0) return;
@@ -244,49 +347,30 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           referrerPolicy="no-referrer-when-downgrade"
         />
       ) : (
-        <ReactPlayer
-          ref={playerRef}
-          url={selectedSource.url}
-          playing={isPlaying}
-          volume={isMuted ? 0 : volume}
-          playbackRate={playbackRate}
-          width="100%"
-          height="100%"
-          onProgress={handleProgress}
-          onDuration={handleDuration}
-          onEnded={onEnded}
-          onBuffer={() => setIsBuffering(true)}
-          onBufferEnd={() => setIsBuffering(false)}
-          onError={handlePlayerError}
-          config={{
-            file: {
-              attributes: {
-                crossOrigin: 'anonymous',
-              },
-              tracks: selectedSubtitle
-                ? [
-                    {
-                      kind: 'subtitles',
-                      src: selectedSubtitle.url,
-                      srcLang: selectedSubtitle.lang,
-                      label: selectedSubtitle.label,
-                      default: true,
-                    },
-                  ]
-                : [],
-            },
+        <video
+          ref={videoRef}
+          className="w-full h-full"
+          poster={backdropUrl || posterUrl}
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={handleLoadedMetadata}
+          onWaiting={() => setIsBuffering(true)}
+          onCanPlay={() => {
+            setIsBuffering(false);
+            setIsInitializing(false);
           }}
+          onPlaying={() => setIsBuffering(false)}
+          onEnded={onEnded}
+          onError={handlePlayerError}
+          playsInline
         />
       )}
 
-      {/* Controls Overlay */}
       {!isEmbedSource && (
         <div
           className={`absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent transition-opacity duration-300 ${
             showControls || !isPlaying ? 'opacity-100' : 'opacity-0'
           }`}
         >
-          {/* Top Bar */}
           <div className="absolute top-0 left-0 right-0 p-3 sm:p-4 flex justify-between items-start">
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 rounded-full bg-black/50 text-xs uppercase tracking-[0.3em] text-white/70">
@@ -306,7 +390,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
             </button>
           </div>
 
-          {/* Center - Play/Pause */}
           <div className="absolute inset-0 flex items-center justify-center">
             <button
               onClick={handlePlayPause}
@@ -320,7 +403,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
             </button>
           </div>
 
-          {/* Bottom Controls */}
           <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5">
             <div
               ref={progressBarRef}
@@ -450,20 +532,20 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {showSettings && (
         <div className="absolute bottom-20 sm:bottom-24 right-4 sm:right-6 glass-panel rounded-2xl p-4 w-52 sm:w-60">
           <div className="space-y-4 text-sm text-white/80">
-            {sources.length > 1 && (
+            {sortedSources.length > 1 && (
               <div>
                 <p className="text-xs uppercase tracking-[0.3em] text-white/40 mb-2">Source</p>
                 <select
                   value={selectedSource.url}
                   onChange={(e) => {
-                    const source = sources.find((s) => s.url === e.target.value);
+                    const source = sortedSources.find((s) => s.url === e.target.value);
                     if (source) setSelectedSource(source);
                   }}
                   className="w-full bg-dark-900/80 text-white rounded-lg px-3 py-2 border border-white/10"
                 >
-                  {sources.map((source) => (
+                  {sortedSources.map((source) => (
                     <option key={source.url} value={source.url}>
-                      {source.quality} - {source.provider_name}
+                      {source.quality} - {source.provider_name} ({source.stream_type})
                     </option>
                   ))}
                 </select>
@@ -525,7 +607,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         </div>
       )}
 
-      {isBuffering && !isEmbedSource && (
+      {(isBuffering || isInitializing) && !isEmbedSource && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-black/60 border border-white/10 flex items-center justify-center">
             <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 text-white animate-spin" />

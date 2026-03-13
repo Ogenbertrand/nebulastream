@@ -10,9 +10,12 @@ from core.config import settings
 from core.database import get_db
 from schemas.stream import StreamResponse, StreamSource
 from services.stream_aggregator import stream_aggregator
+from services.stream_finder import find_streams
+from core.logging import get_logger
 from services.cache import cache_service
 
 router = APIRouter()
+logger = get_logger("streams")
 
 
 @router.get("/{movie_id}", response_model=StreamResponse)
@@ -30,12 +33,31 @@ async def get_movie_streams(
     if cached:
         return StreamResponse(movie_id=movie_id, sources=cached)
     
-    # Aggregate streams from providers
-    sources = await stream_aggregator.get_streams(
+    # Attempt to find direct streams first
+    direct_sources = await find_streams(movie_id)
+
+    # Always include embed providers as fallback
+    embed_sources = await stream_aggregator.get_streams(
         movie_id=movie_id,
         preferred_quality=preferred_quality,
         preferred_language=preferred_language
     )
+
+    sources = []
+    if direct_sources:
+        logger.info(
+            "streams.direct_found",
+            movie_id=movie_id,
+            count=len(direct_sources),
+        )
+        sources.extend(direct_sources)
+    if embed_sources:
+        logger.info(
+            "streams.embed_found",
+            movie_id=movie_id,
+            count=len(embed_sources),
+        )
+        sources.extend(embed_sources)
     
     if not sources:
         # Return empty response - frontend can handle no sources

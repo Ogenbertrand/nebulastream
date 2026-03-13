@@ -1,12 +1,13 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
-import VideoPlayer from '../../components/VideoPlayer/VideoPlayer';
 import Loading from '../../components/Loading/Loading';
 import { moviesApi, streamsApi, watchHistoryApi } from '../../services/api';
 import { Movie, StreamSource } from '../../types';
 import toast from 'react-hot-toast';
+
+const VideoPlayer = React.lazy(() => import('../../components/VideoPlayer/VideoPlayer'));
 
 const Player: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -187,14 +188,16 @@ const Player: React.FC = () => {
 
           <div className="min-h-screen flex items-center justify-center px-4 pb-20 sm:pb-24 pt-20">
             <div className="w-full max-w-6xl 2xl:max-w-screen-2xl mx-auto">
-              <VideoPlayer
-                sources={sources}
-                initialProgress={initialProgress}
-                onProgress={handleProgress}
-                onEnded={handleEnded}
-                posterUrl={movie?.poster_path}
-                backdropUrl={movie?.backdrop_path}
-              />
+              <Suspense fallback={<Loading message="Loading player..." />}>
+                <VideoPlayer
+                  sources={sources}
+                  initialProgress={initialProgress}
+                  onProgress={handleProgress}
+                  onEnded={handleEnded}
+                  posterUrl={movie?.poster_path}
+                  backdropUrl={movie?.backdrop_path}
+                />
+              </Suspense>
             </div>
           </div>
 
