@@ -69,15 +69,16 @@ const Profile: React.FC = () => {
     }
   };
 
+  const safeGenres = Array.isArray(genres) ? genres : [];
   const genreMap = useMemo(() => {
-    return genres.reduce(
+    return safeGenres.reduce(
       (acc, genre) => {
         acc[genre.id] = genre.name;
         return acc;
       },
       {} as Record<number, string>
     );
-  }, [genres]);
+  }, [safeGenres]);
 
   if (loading) {
     return <Loading fullScreen />;
@@ -99,9 +100,9 @@ const Profile: React.FC = () => {
         <title>Profile - NebulaStream</title>
       </Helmet>
 
-      <div className="min-h-screen bg-dark-950 pt-8 pb-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative overflow-hidden rounded-3xl p-8 md:p-12 glass-panel mb-10">
+      <div className="min-h-screen bg-dark-950 pt-6 sm:pt-8 pb-16">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12">
+          <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 md:p-12 glass-panel mb-10">
             <div className="absolute inset-0 bg-gradient-to-r from-nebula-500/15 via-transparent to-accent-500/10" />
             <div className="relative flex flex-col md:flex-row gap-8 items-start md:items-center">
               <div className="relative">
@@ -109,13 +110,13 @@ const Profile: React.FC = () => {
                   <img
                     src={profile.avatar_url}
                     alt={profile.display_name || profile.username}
-                    className="w-28 h-28 rounded-full object-cover border-2 border-white/20"
+                    className="w-20 h-20 sm:w-28 sm:h-28 rounded-full object-cover border-2 border-white/20"
                     loading="lazy"
                     decoding="async"
                   />
                 ) : (
-                  <div className="w-28 h-28 rounded-full bg-nebula-500/20 flex items-center justify-center border border-white/10">
-                    <User className="w-12 h-12 text-white" />
+                  <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full bg-nebula-500/20 flex items-center justify-center border border-white/10">
+                    <User className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
                   </div>
                 )}
               </div>
@@ -172,7 +173,7 @@ const Profile: React.FC = () => {
                 ) : (
                   <>
                     <div className="flex items-center gap-4 mb-2">
-                      <h1 className="text-3xl font-display font-bold text-white">
+                      <h1 className="text-2xl sm:text-3xl font-display font-bold text-white">
                         {profile.display_name || profile.username}
                       </h1>
                       <button
@@ -202,7 +203,7 @@ const Profile: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
             <div className="glass-panel rounded-2xl p-6">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-nebula-500/20 rounded-xl flex items-center justify-center">

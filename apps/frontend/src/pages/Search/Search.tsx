@@ -89,15 +89,17 @@ const Search: React.FC = () => {
         <meta name="description" content="Search for movies on NebulaStream" />
       </Helmet>
 
-      <div className="min-h-screen bg-dark-950 pt-12 pb-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-10 glass-panel rounded-3xl p-8">
-            <h1 className="text-3xl font-display font-bold text-white mb-4">Search the Nebula</h1>
+      <div className="min-h-screen bg-dark-950 pt-8 sm:pt-12 pb-16">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12">
+          <div className="mb-10 glass-panel rounded-3xl p-6 sm:p-8 md:p-10">
+            <h1 className="text-2xl sm:text-3xl font-display font-bold text-white mb-4">
+              Search the Nebula
+            </h1>
             <p className="text-white/60 mb-6">
               Find movies, actors, and stories that match your mood tonight.
             </p>
 
-            <form onSubmit={handleSubmit} className="relative max-w-2xl">
+            <form onSubmit={handleSubmit} className="relative max-w-2xl 2xl:max-w-3xl">
               <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/50" />
               <input
                 type="text"
@@ -108,7 +110,7 @@ const Search: React.FC = () => {
                 }}
                 onFocus={() => setShowSuggestions(true)}
                 placeholder="Search titles, actors, genres..."
-                className="w-full pl-12 pr-12 py-4 bg-dark-900/80 border border-white/10 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-nebula-500"
+                className="w-full pl-12 pr-12 py-3 sm:py-4 bg-dark-900/80 border border-white/10 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-nebula-500"
               />
               {query && (
                 <button
@@ -121,7 +123,7 @@ const Search: React.FC = () => {
               )}
 
               {showSuggestions && suggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-3 glass-panel rounded-2xl shadow-xl z-50">
+                <div className="absolute top-full left-0 right-0 mt-3 glass-panel rounded-2xl shadow-xl z-50 max-h-72 sm:max-h-96 overflow-auto">
                   {suggestions.map((suggestion) => (
                     <button
                       key={suggestion.id}
@@ -153,7 +155,7 @@ const Search: React.FC = () => {
 
           {searchQuery && (
             <div>
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
                 <h2 className="text-xl font-semibold text-white">Results for "{searchQuery}"</h2>
                 <span className="text-white/60">
                   {movies.length} {movies.length === 1 ? 'movie' : 'movies'} found
@@ -163,7 +165,7 @@ const Search: React.FC = () => {
               {loading ? (
                 <Loading />
               ) : movies.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-4 sm:gap-6">
                   {movies.map((movie) => (
                     <MovieCard key={movie.id} movie={movie} />
                   ))}

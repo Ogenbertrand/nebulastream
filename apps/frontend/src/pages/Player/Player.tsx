@@ -170,18 +170,18 @@ const Player: React.FC = () => {
         )}
 
         <div className="relative z-10">
-          <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent p-4">
+          <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent p-3 sm:p-4">
             <button
               onClick={() => navigate(-1)}
               className="flex items-center text-white hover:text-nebula-400 transition-colors"
             >
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              Back
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+              <span className="text-sm sm:text-base">Back</span>
             </button>
           </div>
 
-          <div className="min-h-screen flex items-center justify-center px-4 pb-16 pt-20">
-            <div className="w-full max-w-6xl mx-auto">
+          <div className="min-h-screen flex items-center justify-center px-4 pb-20 sm:pb-24 pt-20">
+            <div className="w-full max-w-6xl 2xl:max-w-screen-2xl mx-auto">
               <VideoPlayer
                 sources={sources}
                 initialProgress={initialProgress}
@@ -194,11 +194,15 @@ const Player: React.FC = () => {
           </div>
 
           {movie && (
-            <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent p-6">
-              <div className="max-w-6xl mx-auto">
-                <h1 className="text-2xl font-display font-bold text-white">{movie.title}</h1>
+            <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent p-4 sm:p-6">
+              <div className="max-w-6xl 2xl:max-w-screen-2xl mx-auto">
+                <h1 className="text-lg sm:text-2xl font-display font-bold text-white">
+                  {movie.title}
+                </h1>
                 {movie.overview && (
-                  <p className="text-white/60 mt-2 line-clamp-2 max-w-2xl">{movie.overview}</p>
+                  <p className="text-white/60 mt-2 line-clamp-2 max-w-2xl text-sm sm:text-base">
+                    {movie.overview}
+                  </p>
                 )}
               </div>
             </div>

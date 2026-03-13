@@ -77,7 +77,7 @@ const Hero: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="relative h-[75vh] min-h-[520px] bg-dark-900 animate-pulse">
+      <div className="relative h-[60vh] sm:h-[70vh] lg:h-[78vh] 2xl:h-[86vh] min-h-[420px] sm:min-h-[520px] bg-dark-900 animate-pulse">
         <div className="absolute inset-0 hero-gradient" />
       </div>
     );
@@ -89,7 +89,7 @@ const Hero: React.FC = () => {
   const year = displayMovie.release_date ? new Date(displayMovie.release_date).getFullYear() : null;
 
   return (
-    <div className="relative h-[75vh] min-h-[520px] overflow-hidden">
+    <div className="relative h-[60vh] sm:h-[70vh] lg:h-[78vh] 2xl:h-[86vh] min-h-[420px] sm:min-h-[520px] overflow-hidden">
       <div className="absolute inset-0">
         {trailerUrl ? (
           <div className="absolute inset-0">
@@ -129,21 +129,21 @@ const Hero: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-dark-950/90 via-dark-950/40 to-transparent" />
       </div>
 
-      <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-end pb-16">
+      <div className="relative h-full max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 flex items-end pb-10 sm:pb-14 lg:pb-16">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: 'easeOut' }}
-          className="max-w-2xl"
+          className="max-w-2xl 2xl:max-w-3xl"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-xs uppercase tracking-[0.3em] text-white/70 mb-4">
             Featured
           </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-white mb-4">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl 2xl:text-7xl font-display font-bold text-white mb-4">
             {displayMovie.title}
           </h1>
 
-          <div className="flex flex-wrap items-center gap-4 text-sm text-white/70 mb-4">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-white/70 mb-4">
             <span className="px-2 py-1 rounded-full bg-white/10 text-white font-semibold">
               {displayMovie.vote_average.toFixed(1)}
             </span>
@@ -155,11 +155,11 @@ const Hero: React.FC = () => {
             )}
           </div>
 
-          <p className="text-white/80 text-lg leading-relaxed line-clamp-3 mb-8">
+          <p className="text-white/80 text-sm sm:text-lg leading-relaxed line-clamp-3 mb-6 sm:mb-8">
             {displayMovie.overview || 'No overview available.'}
           </p>
 
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
             <Link to={`/watch/${displayMovie.id}`} className="btn-primary">
               <Play className="w-5 h-5 mr-2 fill-current" />
               Play
@@ -178,9 +178,9 @@ const Hero: React.FC = () => {
 
       <button
         onClick={() => setIsMuted((prev) => !prev)}
-        className="absolute bottom-8 right-8 w-12 h-12 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition"
+        className="absolute bottom-4 right-4 sm:bottom-8 sm:right-8 w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition"
       >
-        {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+        {isMuted ? <VolumeX className="w-4 h-4 sm:w-5 sm:h-5" /> : <Volume2 className="w-4 h-4 sm:w-5 sm:h-5" />}
       </button>
     </div>
   );

@@ -81,15 +81,16 @@ const Home: React.FC = () => {
     loadContinueWatching();
   }, [isAuthenticated]);
 
+  const safeGenres = Array.isArray(genres) ? genres : [];
   const genreMap = useMemo(() => {
-    return genres.reduce(
+    return safeGenres.reduce(
       (acc, genre) => {
         acc[genre.id] = genre.name;
         return acc;
       },
       {} as Record<number, string>
     );
-  }, [genres]);
+  }, [safeGenres]);
 
   const continueWatchingMovies = continueWatching.map((item) => item.movie);
 
@@ -106,7 +107,7 @@ const Home: React.FC = () => {
       <div className="min-h-screen bg-dark-950">
         <Hero />
 
-        <div className="relative z-10 -mt-32 pb-12">
+        <div className="relative z-10 -mt-24 sm:-mt-32 pb-12">
           {isAuthenticated && continueWatchingMovies.length > 0 && (
             <MovieRow
               title="Continue Watching"

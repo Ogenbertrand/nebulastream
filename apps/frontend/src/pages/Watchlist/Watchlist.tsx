@@ -65,13 +65,13 @@ const Watchlist: React.FC = () => {
         <title>My List - NebulaStream</title>
       </Helmet>
 
-      <div className="min-h-screen bg-dark-950 pt-10 pb-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative overflow-hidden glass-panel rounded-3xl p-8 mb-10">
+      <div className="min-h-screen bg-dark-950 pt-8 sm:pt-10 pb-16">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12">
+          <div className="relative overflow-hidden glass-panel rounded-3xl p-6 sm:p-8 md:p-10 mb-10">
             <div className="absolute -top-20 -right-10 w-60 h-60 bg-nebula-500/20 blur-[80px]" />
             <div className="absolute -bottom-24 left-0 w-72 h-72 bg-accent-500/20 blur-[90px]" />
             <div className="relative">
-              <h1 className="text-3xl font-display font-bold text-white">My List</h1>
+              <h1 className="text-2xl sm:text-3xl font-display font-bold text-white">My List</h1>
               <p className="text-white/60 mt-2">Your favorites, history, and unfinished stories.</p>
               <div className="flex flex-wrap gap-3 mt-4 text-xs uppercase tracking-[0.3em] text-white/50">
                 <span>{favorites.length} Favorites</span>
@@ -84,7 +84,7 @@ const Watchlist: React.FC = () => {
           {/* Continue Watching */}
           {continueWatching.length > 0 && (
             <section className="mb-12">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
                 <div>
                   <h2 className="text-xl font-semibold text-white">Continue Watching</h2>
                   <p className="text-white/50 text-sm">Pick up right where you left off.</p>
@@ -98,7 +98,7 @@ const Watchlist: React.FC = () => {
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-4 sm:gap-6">
                 {continueWatching.map((item) => (
                   <div key={item.movie.id} className="relative group">
                     <MovieCard movie={item.movie} />
@@ -128,7 +128,7 @@ const Watchlist: React.FC = () => {
 
           {/* Favorites */}
           <section>
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
               <div>
                 <h2 className="text-xl font-semibold text-white">My Favorites</h2>
                 <p className="text-white/50 text-sm">Saved for your perfect movie night.</p>
@@ -136,7 +136,7 @@ const Watchlist: React.FC = () => {
             </div>
 
             {favorites.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-4 sm:gap-6">
                 {favorites.map((favorite) => (
                   <div key={favorite.movie_id} className="relative group">
                     {/* This would need the full movie data - simplified for now */}

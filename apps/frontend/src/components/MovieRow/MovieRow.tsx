@@ -20,7 +20,22 @@ const MovieRow: React.FC<MovieRowProps> = ({ title, movies, loading = false, gen
   useEffect(() => {
     const updateSizes = () => {
       const width = window.innerWidth;
-      const nextCardWidth = width >= 768 ? 224 : width >= 640 ? 192 : 160;
+      const nextCardWidth =
+        width >= 2560
+          ? 320
+          : width >= 1920
+            ? 300
+            : width >= 1536
+              ? 260
+              : width >= 1280
+                ? 240
+                : width >= 1024
+                  ? 224
+                  : width >= 768
+                    ? 200
+                    : width >= 640
+                      ? 180
+                      : 150;
       setCardWidth(nextCardWidth);
       setContainerWidth(scrollRef.current?.clientWidth || 0);
     };
@@ -52,7 +67,7 @@ const MovieRow: React.FC<MovieRowProps> = ({ title, movies, loading = false, gen
     }
   };
 
-  const gap = 16;
+  const gap = cardWidth >= 260 ? 24 : cardWidth >= 220 ? 20 : 16;
   const itemWidth = cardWidth + gap;
   const totalWidth = movies.length * itemWidth;
   const overscan = 3;
@@ -65,7 +80,7 @@ const MovieRow: React.FC<MovieRowProps> = ({ title, movies, loading = false, gen
     () => movies.slice(startIndex, endIndex),
     [movies, startIndex, endIndex]
   );
-  const rowHeight = Math.round(cardWidth * 1.7 + 80);
+  const rowHeight = Math.round(cardWidth * 1.65 + 96);
 
   if (loading) {
     return (
@@ -73,7 +88,7 @@ const MovieRow: React.FC<MovieRowProps> = ({ title, movies, loading = false, gen
         <div className="h-6 w-48 bg-dark-800 rounded-full animate-pulse mb-4" />
         <div className="flex space-x-4 overflow-hidden">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="flex-shrink-0 w-40">
+            <div key={i} className="flex-shrink-0 w-32 sm:w-36 lg:w-40 2xl:w-48">
               <div className="aspect-poster bg-dark-800 rounded-2xl animate-pulse" />
               <div className="h-4 w-3/4 bg-dark-800 rounded animate-pulse mt-3" />
             </div>
@@ -94,23 +109,30 @@ const MovieRow: React.FC<MovieRowProps> = ({ title, movies, loading = false, gen
       transition={{ duration: 0.6, ease: 'easeOut' }}
       className="py-6 relative group"
     >
-      <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 mb-4">
-        <h2 className="text-xl sm:text-2xl font-semibold text-white tracking-wide">{title}</h2>
-        <span className="text-xs uppercase tracking-[0.3em] text-white/40">Explore</span>
+      <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 2xl:px-10 mb-4">
+        <h2 className="text-lg sm:text-xl lg:text-2xl 2xl:text-3xl font-semibold text-white tracking-wide">
+          {title}
+        </h2>
+        <span className="hidden sm:inline text-xs uppercase tracking-[0.3em] text-white/40">
+          Explore
+        </span>
       </div>
 
       <div className="relative">
-        <div className="row-mask-left" />
-        <div className="row-mask-right" />
+        <div className="row-mask-left w-10 sm:w-14 lg:w-20 2xl:w-24" />
+        <div className="row-mask-right w-10 sm:w-14 lg:w-20 2xl:w-24" />
 
         <button
           onClick={() => scroll('left')}
           className="absolute left-3 top-0 bottom-0 z-10 w-10 hidden sm:flex items-center justify-center rounded-full bg-white/10 text-white/70 hover:text-white hover:bg-white/20 transition opacity-0 group-hover:opacity-100"
         >
-          <ChevronLeft className="w-6 h-6" />
+          <ChevronLeft className="w-5 h-5 2xl:w-6 2xl:h-6" />
         </button>
 
-        <div ref={scrollRef} className="overflow-x-auto hide-scrollbar px-4 sm:px-6 lg:px-8 pb-4">
+        <div
+          ref={scrollRef}
+          className="overflow-x-auto hide-scrollbar px-4 sm:px-6 lg:px-8 2xl:px-10 pb-4"
+        >
           <div className="relative" style={{ width: totalWidth || '100%', height: rowHeight }}>
             {visibleMovies.map((movie, index) => {
               const absoluteIndex = startIndex + index;
@@ -134,7 +156,7 @@ const MovieRow: React.FC<MovieRowProps> = ({ title, movies, loading = false, gen
           onClick={() => scroll('right')}
           className="absolute right-3 top-0 bottom-0 z-10 w-10 hidden sm:flex items-center justify-center rounded-full bg-white/10 text-white/70 hover:text-white hover:bg-white/20 transition opacity-0 group-hover:opacity-100"
         >
-          <ChevronRight className="w-6 h-6" />
+          <ChevronRight className="w-5 h-5 2xl:w-6 2xl:h-6" />
         </button>
       </div>
     </motion.section>

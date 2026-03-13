@@ -215,7 +215,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative w-full aspect-video bg-black rounded-3xl overflow-hidden group player-container"
+      className="relative w-full aspect-video bg-black rounded-2xl sm:rounded-3xl overflow-hidden group player-container"
     >
       <ReactPlayer
         ref={playerRef}
@@ -257,7 +257,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         }`}
       >
         {/* Top Bar */}
-        <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start">
+        <div className="absolute top-0 left-0 right-0 p-3 sm:p-4 flex justify-between items-start">
           <div className="flex items-center gap-3">
             <span className="px-3 py-1 rounded-full bg-black/50 text-xs uppercase tracking-[0.3em] text-white/70">
               {selectedSource.quality} • {selectedSource.provider_name}
@@ -272,7 +272,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
             onClick={toggleSettings}
             className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition"
           >
-            <Settings className="w-5 h-5 text-white" />
+            <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </button>
         </div>
 
@@ -280,24 +280,24 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         <div className="absolute inset-0 flex items-center justify-center">
           <button
             onClick={handlePlayPause}
-            className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors"
+            className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors"
           >
             {isPlaying ? (
-              <Pause className="w-8 h-8 text-white" />
+              <Pause className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             ) : (
-              <Play className="w-8 h-8 text-white ml-1" />
+              <Play className="w-6 h-6 sm:w-8 sm:h-8 text-white ml-1" />
             )}
           </button>
         </div>
 
         {/* Bottom Controls */}
-        <div className="absolute bottom-0 left-0 right-0 p-5">
+        <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5">
           <div
             ref={progressBarRef}
             onMouseMove={handleProgressHover}
             onMouseLeave={handleProgressLeave}
             onClick={handleProgressClick}
-            className="relative h-2 bg-white/20 rounded-full cursor-pointer"
+            className="relative h-1.5 sm:h-2 bg-white/20 rounded-full cursor-pointer"
           >
             <div
               className="absolute top-0 left-0 h-full bg-nebula-500 rounded-full"
@@ -323,24 +323,28 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           </div>
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
               <button onClick={handlePlayPause} className="text-white hover:text-nebula-400">
-                {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+                {isPlaying ? (
+                  <Pause className="w-5 h-5 sm:w-6 sm:h-6" />
+                ) : (
+                  <Play className="w-5 h-5 sm:w-6 sm:h-6" />
+                )}
               </button>
 
               <button onClick={() => handleSkip(-10)} className="text-white hover:text-nebula-400">
-                <SkipBack className="w-5 h-5" />
+                <SkipBack className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
               <button onClick={() => handleSkip(10)} className="text-white hover:text-nebula-400">
-                <SkipForward className="w-5 h-5" />
+                <SkipForward className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
 
               <div className="flex items-center gap-2">
                 <button onClick={handleMuteToggle} className="text-white hover:text-nebula-400">
                   {isMuted || volume === 0 ? (
-                    <VolumeX className="w-5 h-5" />
+                    <VolumeX className="w-4 h-4 sm:w-5 sm:h-5" />
                   ) : (
-                    <Volume2 className="w-5 h-5" />
+                    <Volume2 className="w-4 h-4 sm:w-5 sm:h-5" />
                   )}
                 </button>
                 <input
@@ -350,11 +354,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   step={0.1}
                   value={isMuted ? 0 : volume}
                   onChange={handleVolumeChange}
-                  className="w-24 h-1 bg-white/30 rounded-lg appearance-none cursor-pointer"
+                  className="w-20 sm:w-24 h-1 bg-white/30 rounded-lg appearance-none cursor-pointer"
                 />
               </div>
 
-              <span className="text-white/70 text-sm">
+              <span className="text-white/70 text-xs sm:text-sm">
                 {formatTime(progress)} / {formatTime(duration)}
               </span>
             </div>
@@ -364,11 +368,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 onClick={toggleSettings}
                 className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition"
               >
-                <Settings className="w-5 h-5 text-white" />
+                <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </button>
 
               <button onClick={handleFullscreen} className="text-white hover:text-nebula-400">
-                {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+                {isFullscreen ? (
+                  <Minimize className="w-4 h-4 sm:w-5 sm:h-5" />
+                ) : (
+                  <Maximize className="w-4 h-4 sm:w-5 sm:h-5" />
+                )}
               </button>
             </div>
           </div>
@@ -376,7 +384,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       </div>
 
       {showSettings && (
-        <div className="absolute bottom-24 right-6 glass-panel rounded-2xl p-4 w-60">
+        <div className="absolute bottom-20 sm:bottom-24 right-4 sm:right-6 glass-panel rounded-2xl p-4 w-52 sm:w-60">
           <div className="space-y-4 text-sm text-white/80">
             {sources.length > 1 && (
               <div>
@@ -443,8 +451,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
       {isBuffering && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-14 h-14 rounded-full bg-black/60 border border-white/10 flex items-center justify-center">
-            <Loader2 className="w-6 h-6 text-white animate-spin" />
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-black/60 border border-white/10 flex items-center justify-center">
+            <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 text-white animate-spin" />
           </div>
         </div>
       )}

@@ -96,12 +96,12 @@ const MovieDetail: React.FC = () => {
       <div className="min-h-screen bg-dark-950">
         <button
           onClick={() => navigate(-1)}
-          className="fixed top-24 left-6 z-30 w-10 h-10 glass-panel rounded-full flex items-center justify-center text-white hover:bg-white/10 transition"
+          className="fixed top-20 sm:top-24 left-4 sm:left-6 z-30 w-9 h-9 sm:w-10 sm:h-10 glass-panel rounded-full flex items-center justify-center text-white hover:bg-white/10 transition"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
 
-        <div className="relative h-[75vh] min-h-[520px]">
+        <div className="relative h-[60vh] sm:h-[70vh] lg:h-[78vh] 2xl:h-[86vh] min-h-[420px] sm:min-h-[520px]">
           <div className="absolute inset-0">
             {movie.backdrop_path ? (
               <img
@@ -118,9 +118,27 @@ const MovieDetail: React.FC = () => {
             <div className="absolute inset-0 bg-gradient-to-r from-dark-950 via-dark-950/30 to-transparent" />
           </div>
 
-          <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-end pb-16">
-            <div className="flex flex-col lg:flex-row gap-10 items-end">
-              <div className="hidden lg:block w-60">
+          <div className="relative h-full max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 flex items-end pb-10 sm:pb-14 lg:pb-16">
+            <div className="flex flex-col lg:flex-row gap-6 sm:gap-10 items-start lg:items-end">
+              <div className="block lg:hidden w-28 sm:w-36">
+                <div className="aspect-poster rounded-2xl overflow-hidden shadow-2xl">
+                  {movie.poster_path ? (
+                    <img
+                      src={movie.poster_path}
+                      alt={movie.title}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-dark-800 flex items-center justify-center">
+                      <span className="text-white/40 text-xs">No Image</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="hidden lg:block w-60 2xl:w-72">
                 <div className="aspect-poster rounded-2xl overflow-hidden shadow-2xl">
                   {movie.poster_path ? (
                     <img
@@ -138,12 +156,12 @@ const MovieDetail: React.FC = () => {
                 </div>
               </div>
 
-              <div className="max-w-2xl">
-                <h1 className="text-4xl sm:text-5xl font-display font-bold text-white mb-4">
+              <div className="max-w-2xl 2xl:max-w-3xl">
+                <h1 className="text-3xl sm:text-5xl 2xl:text-6xl font-display font-bold text-white mb-4">
                   {movie.title}
                 </h1>
 
-                <div className="flex flex-wrap items-center gap-4 text-sm text-white/70 mb-4">
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-white/70 mb-4">
                   <span className="flex items-center gap-1 text-green-400">
                     <Star className="w-4 h-4 fill-current" />
                     {movie.vote_average.toFixed(1)}
@@ -173,7 +191,7 @@ const MovieDetail: React.FC = () => {
                   ))}
                 </div>
 
-                <div className="flex flex-wrap gap-4 mb-6">
+                <div className="flex flex-wrap gap-3 sm:gap-4 mb-6">
                   <Link to={`/watch/${movie.id}`} className="btn-primary">
                     <Play className="w-5 h-5 mr-2 fill-current" />
                     Play
@@ -198,21 +216,23 @@ const MovieDetail: React.FC = () => {
                 </div>
 
                 {movie.tagline && (
-                  <p className="text-lg text-white/60 italic mb-3">{movie.tagline}</p>
+                  <p className="text-base sm:text-lg text-white/60 italic mb-3">{movie.tagline}</p>
                 )}
-                <p className="text-white/80 leading-relaxed">{movie.overview}</p>
+                <p className="text-white/80 leading-relaxed text-sm sm:text-base">
+                  {movie.overview}
+                </p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-10 sm:py-12">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
             <div className="lg:col-span-2 space-y-10">
               {movie.cast && movie.cast.length > 0 && (
                 <section>
                   <h2 className="text-2xl font-semibold text-white mb-6">Cast</h2>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
                     {movie.cast.slice(0, 8).map((actor) => (
                       <div key={actor.id} className="text-center">
                         <div className="aspect-square rounded-2xl overflow-hidden mb-2 bg-dark-800">

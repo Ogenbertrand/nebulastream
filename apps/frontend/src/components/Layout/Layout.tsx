@@ -6,7 +6,7 @@ const Layout: React.FC = () => {
   return (
     <div className="min-h-screen bg-dark-950">
       <Navbar />
-      <main className="pt-20">
+      <main className="pt-16 sm:pt-20 lg:pt-24">
         <Outlet />
       </main>
     </div>

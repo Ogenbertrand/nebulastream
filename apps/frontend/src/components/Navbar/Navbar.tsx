@@ -44,23 +44,25 @@ const Navbar: React.FC = () => {
           : 'bg-gradient-to-b from-dark-950/60 via-dark-950/20 to-transparent'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="h-18 flex items-center justify-between py-4">
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 2xl:px-10">
+        <div className="flex items-center justify-between py-3 sm:py-4">
           {/* Brand */}
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-nebula-500/20 border border-nebula-500/40 flex items-center justify-center">
-              <Film className="w-5 h-5 text-nebula-500" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-nebula-500/20 border border-nebula-500/40 flex items-center justify-center">
+              <Film className="w-4 h-4 sm:w-5 sm:h-5 text-nebula-500" />
             </div>
             <div className="leading-tight">
-              <span className="text-white font-display text-lg tracking-wide">NebulaStream</span>
-              <span className="block text-[10px] uppercase tracking-[0.4em] text-white/50">
+              <span className="text-white font-display text-base sm:text-lg lg:text-xl tracking-wide">
+                NebulaStream
+              </span>
+              <span className="block text-[9px] sm:text-[10px] uppercase tracking-[0.4em] text-white/50">
                 CINEMA
               </span>
             </div>
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden lg:flex items-center gap-8">
+          <div className="hidden lg:flex items-center gap-6 xl:gap-8 2xl:gap-10">
             {navLinks.map((link) => (
               <Link
                 key={link.to}
@@ -79,14 +81,15 @@ const Navbar: React.FC = () => {
                 <motion.form
                   onSubmit={handleSearch}
                   initial={{ opacity: 0, width: 0 }}
-                  animate={{ opacity: 1, width: 260 }}
-                  className="relative overflow-hidden"
+                  animate={{ opacity: 1, width: 220 }}
+                  transition={{ duration: 0.2 }}
+                  className="relative overflow-hidden lg:w-[260px] 2xl:w-[320px]"
                 >
                   <input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search titles"
-                    className="w-full pl-10 pr-10 py-2 rounded-full bg-dark-900/80 border border-white/10 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-nebula-500"
+                    className="w-full pl-10 pr-10 py-2.5 rounded-full bg-dark-900/80 border border-white/10 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-nebula-500"
                     autoFocus
                   />
                   <Search className="w-4 h-4 text-white/50 absolute left-3 top-2.5" />
@@ -182,7 +185,7 @@ const Navbar: React.FC = () => {
           animate={{ opacity: 1, height: 'auto' }}
           className="lg:hidden border-t border-white/5 bg-dark-950/95 backdrop-blur-xl"
         >
-          <div className="px-6 py-4 flex flex-col gap-3">
+          <div className="px-4 sm:px-6 py-4 flex flex-col gap-3">
             {navLinks.map((link) => (
               <Link
                 key={link.to}

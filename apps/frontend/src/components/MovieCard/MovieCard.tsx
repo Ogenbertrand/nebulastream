@@ -102,10 +102,10 @@ const MovieCard: React.FC<MovieCardProps> = ({
         </div>
 
         <div className="mt-3">
-          <h3 className="text-white font-medium text-sm line-clamp-1 group-hover:text-nebula-500 transition-colors">
+          <h3 className="text-white font-medium text-xs sm:text-sm lg:text-base line-clamp-1 group-hover:text-nebula-500 transition-colors">
             {movie.title}
           </h3>
-          <div className="flex items-center justify-between mt-1 text-xs text-white/60">
+          <div className="flex items-center justify-between mt-1 text-[10px] sm:text-xs text-white/60">
             <div className="flex items-center gap-2">
               {year && <span>{year}</span>}
               {genres && genres.length > 0 && (

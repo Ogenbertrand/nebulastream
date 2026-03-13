@@ -16,13 +16,14 @@ const Browse: React.FC = () => {
 
   const selectedGenre = searchParams.get('genre');
   const sortBy = searchParams.get('sort') || 'popularity.desc';
+  const safeGenres = Array.isArray(genres) ? genres : [];
   const genreMap = useMemo(
     () =>
-      genres.reduce<Record<number, string>>((acc, genre) => {
+      safeGenres.reduce<Record<number, string>>((acc, genre) => {
         acc[genre.id] = genre.name;
         return acc;
       }, {}),
-    [genres]
+    [safeGenres]
   );
 
   const fetchGenres = async () => {
@@ -103,10 +104,12 @@ const Browse: React.FC = () => {
         />
       </Helmet>
 
-      <div className="min-h-screen bg-dark-950 pt-10 pb-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="glass-panel rounded-3xl p-8 mb-10">
-            <h1 className="text-3xl font-display font-bold text-white mb-2">Browse the Library</h1>
+      <div className="min-h-screen bg-dark-950 pt-8 sm:pt-10 pb-16">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12">
+          <div className="glass-panel rounded-3xl p-6 sm:p-8 md:p-10 mb-10">
+            <h1 className="text-2xl sm:text-3xl font-display font-bold text-white mb-2">
+              Browse the Library
+            </h1>
             <p className="text-white/60">Curate your watchlist by genre or mood.</p>
 
             <div className="flex flex-col lg:flex-row gap-4 mt-6">
@@ -157,7 +160,7 @@ const Browse: React.FC = () => {
 
           {movies.length > 0 ? (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-4 sm:gap-6">
                 {movies.map((movie) => (
                   <MovieCard key={movie.id} movie={movie} genreMap={genreMap} />
                 ))}
