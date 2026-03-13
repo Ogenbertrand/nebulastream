@@ -28,7 +28,15 @@ const Home: React.FC = () => {
 
   const [actionMovies, setActionMovies] = useState<MovieListItem[]>([]);
   const [comedyMovies, setComedyMovies] = useState<MovieListItem[]>([]);
+  const [dramaMovies, setDramaMovies] = useState<MovieListItem[]>([]);
   const [recentMovies, setRecentMovies] = useState<MovieListItem[]>([]);
+  const [hollywoodMovies, setHollywoodMovies] = useState<MovieListItem[]>([]);
+  const [bollywoodMovies, setBollywoodMovies] = useState<MovieListItem[]>([]);
+  const [nollywoodMovies, setNollywoodMovies] = useState<MovieListItem[]>([]);
+  const [koreanMovies, setKoreanMovies] = useState<MovieListItem[]>([]);
+  const [japaneseMovies, setJapaneseMovies] = useState<MovieListItem[]>([]);
+  const [chineseMovies, setChineseMovies] = useState<MovieListItem[]>([]);
+  const [animeMovies, setAnimeMovies] = useState<MovieListItem[]>([]);
   const [continueWatching, setContinueWatching] = useState<ContinueWatching[]>([]);
   const [loadingExtras, setLoadingExtras] = useState(true);
 
@@ -45,16 +53,45 @@ const Home: React.FC = () => {
         setLoadingExtras(true);
         const actionId = genres.find((g) => g.name.toLowerCase() === 'action')?.id || 28;
         const comedyId = genres.find((g) => g.name.toLowerCase() === 'comedy')?.id || 35;
+        const dramaId = genres.find((g) => g.name.toLowerCase() === 'drama')?.id || 18;
 
-        const [action, comedy, recent] = await Promise.all([
+        const [
+          action,
+          comedy,
+          drama,
+          recent,
+          hollywood,
+          bollywood,
+          nollywood,
+          korean,
+          japanese,
+          chinese,
+          anime,
+        ] = await Promise.all([
           moviesApi.getByGenre(actionId, 1),
           moviesApi.getByGenre(comedyId, 1),
+          moviesApi.getByGenre(dramaId, 1),
           moviesApi.getNowPlaying(1),
+          moviesApi.getByOriginCountry('US', 1),
+          moviesApi.getByOriginCountry('IN', 1),
+          moviesApi.getByOriginCountry('NG', 1),
+          moviesApi.getByOriginCountry('KR', 1),
+          moviesApi.getByOriginCountry('JP', 1),
+          moviesApi.getByOriginCountry('CN', 1),
+          moviesApi.getByOriginCountry('JP', 1, 16),
         ]);
 
         setActionMovies(action);
         setComedyMovies(comedy);
+        setDramaMovies(drama);
         setRecentMovies(recent);
+        setHollywoodMovies(hollywood);
+        setBollywoodMovies(bollywood);
+        setNollywoodMovies(nollywood);
+        setKoreanMovies(korean);
+        setJapaneseMovies(japanese);
+        setChineseMovies(chinese);
+        setAnimeMovies(anime);
       } catch (error) {
         console.error('Failed to load extra rows:', error);
       } finally {
@@ -123,9 +160,45 @@ const Home: React.FC = () => {
             genreMap={genreMap}
           />
           <MovieRow
-            title="Top Rated"
-            movies={topRated}
-            loading={topRatedLoading}
+            title="Hollywood Movies"
+            movies={hollywoodMovies}
+            loading={loadingExtras}
+            genreMap={genreMap}
+          />
+          <MovieRow
+            title="Bollywood Movies"
+            movies={bollywoodMovies}
+            loading={loadingExtras}
+            genreMap={genreMap}
+          />
+          <MovieRow
+            title="Nollywood Movies"
+            movies={nollywoodMovies}
+            loading={loadingExtras}
+            genreMap={genreMap}
+          />
+          <MovieRow
+            title="Korean Movies"
+            movies={koreanMovies}
+            loading={loadingExtras}
+            genreMap={genreMap}
+          />
+          <MovieRow
+            title="Japanese Movies"
+            movies={japaneseMovies}
+            loading={loadingExtras}
+            genreMap={genreMap}
+          />
+          <MovieRow
+            title="Chinese Movies"
+            movies={chineseMovies}
+            loading={loadingExtras}
+            genreMap={genreMap}
+          />
+          <MovieRow
+            title="Anime / Animation"
+            movies={animeMovies}
+            loading={loadingExtras}
             genreMap={genreMap}
           />
           <MovieRow
@@ -141,6 +214,12 @@ const Home: React.FC = () => {
             genreMap={genreMap}
           />
           <MovieRow
+            title="Drama Movies"
+            movies={dramaMovies}
+            loading={loadingExtras}
+            genreMap={genreMap}
+          />
+          <MovieRow
             title="Recently Added"
             movies={recentMovies}
             loading={loadingExtras}
@@ -150,6 +229,12 @@ const Home: React.FC = () => {
             title="Popular on NebulaStream"
             movies={popular}
             loading={popularLoading}
+            genreMap={genreMap}
+          />
+          <MovieRow
+            title="Top Rated"
+            movies={topRated}
+            loading={topRatedLoading}
             genreMap={genreMap}
           />
         </div>

@@ -131,6 +131,33 @@ async def get_movies_by_genre(
     return movies
 
 
+@router.get("/origin/{country_code}", response_model=List[MovieList])
+async def get_movies_by_origin_country(
+    country_code: str,
+    page: int = Query(1, ge=1),
+    genre_id: Optional[int] = Query(None),
+    sort_by: str = Query("popularity.desc", regex=r"^(popularity|release_date|vote_average|vote_count)\.(asc|desc)$"),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get movies by origin country (optional genre filter)"""
+    normalized_country = country_code.upper()
+    cache_key = f"origin:{normalized_country}:{page}:{genre_id}:{sort_by}"
+
+    cached = await cache_service.get(cache_key)
+    if cached:
+        return cached
+
+    movies = await tmdb_service.get_movies_by_origin_country(
+        country_code=normalized_country,
+        page=page,
+        genre_id=genre_id,
+        sort_by=sort_by,
+    )
+    await cache_service.set(cache_key, movies, ttl=settings.CACHE_TTL_TRENDING)
+
+    return movies
+
+
 @router.get("/{movie_id}", response_model=MovieDetail)
 async def get_movie_detail(
     movie_id: int,

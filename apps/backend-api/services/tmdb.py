@@ -118,6 +118,27 @@ class TMDBService:
         if data and "results" in data:
             return [self._movie_to_list_item(m) for m in data["results"]]
         return []
+
+    async def get_movies_by_origin_country(
+        self,
+        country_code: str,
+        page: int = 1,
+        genre_id: Optional[int] = None,
+        sort_by: str = "popularity.desc",
+    ) -> List[MovieList]:
+        """Get movies by origin country (optionally filtered by genre)"""
+        params = {
+            "page": page,
+            "sort_by": sort_by,
+            "with_origin_country": country_code,
+        }
+        if genre_id:
+            params["with_genres"] = genre_id
+
+        data = await self._make_request("/discover/movie", params)
+        if data and "results" in data:
+            return [self._movie_to_list_item(m) for m in data["results"]]
+        return []
     
     async def search_movies(
         self,

@@ -15,7 +15,6 @@ const Hero: React.FC = () => {
   const [isMuted, setIsMuted] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const fetchFeatured = async () => {
@@ -33,15 +32,6 @@ const Hero: React.FC = () => {
     };
 
     fetchFeatured();
-  }, []);
-
-  useEffect(() => {
-    const updateViewport = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    updateViewport();
-    window.addEventListener('resize', updateViewport);
-    return () => window.removeEventListener('resize', updateViewport);
   }, []);
 
   useEffect(() => {
@@ -66,7 +56,6 @@ const Hero: React.FC = () => {
     if (!trailer) return null;
     return `https://www.youtube.com/watch?v=${trailer.key}`;
   }, [featuredDetail]);
-  const shouldShowTrailer = Boolean(trailerUrl) && !isMobile;
 
   const handleAddToList = async () => {
     if (!featuredMovie) return;
@@ -102,7 +91,7 @@ const Hero: React.FC = () => {
   return (
     <div className="relative h-[60vh] sm:h-[70vh] lg:h-[78vh] 2xl:h-[86vh] min-h-[420px] sm:min-h-[520px] overflow-hidden">
       <div className="absolute inset-0">
-        {shouldShowTrailer ? (
+        {trailerUrl ? (
           <div className="absolute inset-0">
             <ReactPlayer
               url={trailerUrl}
@@ -166,24 +155,20 @@ const Hero: React.FC = () => {
             )}
           </div>
 
-          <p className="text-white/80 text-sm sm:text-lg leading-relaxed line-clamp-2 sm:line-clamp-3 mb-6 sm:mb-8">
+          <p className="text-white/80 text-sm sm:text-lg leading-relaxed line-clamp-3 mb-6 sm:mb-8">
             {displayMovie.overview || 'No overview available.'}
           </p>
 
-          <div className="flex flex-col xs:flex-row flex-wrap items-start xs:items-center gap-3 sm:gap-4">
-            <Link to={`/watch/${displayMovie.id}`} className="btn-primary w-full xs:w-auto">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+            <Link to={`/watch/${displayMovie.id}`} className="btn-primary">
               <Play className="w-5 h-5 mr-2 fill-current" />
               Play
             </Link>
-            <button
-              onClick={handleAddToList}
-              className="btn-secondary w-full xs:w-auto"
-              disabled={isAdding}
-            >
+            <button onClick={handleAddToList} className="btn-secondary" disabled={isAdding}>
               <Plus className="w-5 h-5 mr-2" />
               {isAdding ? 'Adding...' : 'My List'}
             </button>
-            <Link to={`/movie/${displayMovie.id}`} className="btn-ghost w-full xs:w-auto">
+            <Link to={`/movie/${displayMovie.id}`} className="btn-ghost">
               <Info className="w-5 h-5 mr-2" />
               Details
             </Link>

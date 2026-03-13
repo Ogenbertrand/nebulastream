@@ -113,6 +113,19 @@ export const moviesApi = {
     return response.data;
   },
 
+  getByOriginCountry: async (
+    countryCode: string,
+    page: number = 1,
+    genreId?: number
+  ): Promise<MovieListItem[]> => {
+    const params = new URLSearchParams({ page: page.toString() });
+    if (genreId) {
+      params.set('genre_id', genreId.toString());
+    }
+    const response = await api.get(`/movies/origin/${countryCode}?${params.toString()}`);
+    return response.data;
+  },
+
   getDetail: async (movieId: number): Promise<Movie> => {
     const response = await api.get(`/movies/${movieId}`);
     return response.data;
