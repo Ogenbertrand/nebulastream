@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
@@ -21,9 +21,14 @@ const Player: React.FC = () => {
   // Progress tracking
   const progressRef = React.useRef({ progress: 0, duration: 0 });
   const saveIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
+  const movieRef = useRef<Movie | null>(null);
+
+  useEffect(() => {
+    movieRef.current = movie;
+  }, [movie]);
 
   const saveProgress = useCallback(async () => {
-    if (!id || !movie) return;
+    if (!id || !movieRef.current) return;
 
     const { progress, duration } = progressRef.current;
     if (duration === 0) return;
@@ -41,7 +46,7 @@ const Player: React.FC = () => {
     } catch (error) {
       console.error('Failed to save progress:', error);
     }
-  }, [id, movie]);
+  }, [id]);
 
   const loadPlayerData = useCallback(
     async (movieId: number) => {
