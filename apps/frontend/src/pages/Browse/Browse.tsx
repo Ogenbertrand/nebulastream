@@ -16,15 +16,13 @@ const Browse: React.FC = () => {
 
   const selectedGenre = searchParams.get('genre');
   const sortBy = searchParams.get('sort') || 'popularity.desc';
-  const safeGenres = Array.isArray(genres) ? genres : [];
-  const genreMap = useMemo(
-    () =>
-      safeGenres.reduce<Record<number, string>>((acc, genre) => {
-        acc[genre.id] = genre.name;
-        return acc;
-      }, {}),
-    [safeGenres]
-  );
+  const genreMap = useMemo(() => {
+    const safeGenres = Array.isArray(genres) ? genres : [];
+    return safeGenres.reduce<Record<number, string>>((acc, genre) => {
+      acc[genre.id] = genre.name;
+      return acc;
+    }, {});
+  }, [genres]);
 
   const fetchGenres = async () => {
     try {

@@ -69,8 +69,8 @@ const Profile: React.FC = () => {
     }
   };
 
-  const safeGenres = Array.isArray(genres) ? genres : [];
   const genreMap = useMemo(() => {
+    const safeGenres = Array.isArray(genres) ? genres : [];
     return safeGenres.reduce(
       (acc, genre) => {
         acc[genre.id] = genre.name;
@@ -78,7 +78,7 @@ const Profile: React.FC = () => {
       },
       {} as Record<number, string>
     );
-  }, [safeGenres]);
+  }, [genres]);
 
   if (loading) {
     return <Loading fullScreen />;

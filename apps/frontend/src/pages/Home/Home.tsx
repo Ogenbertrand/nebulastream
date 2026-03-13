@@ -81,8 +81,8 @@ const Home: React.FC = () => {
     loadContinueWatching();
   }, [isAuthenticated]);
 
-  const safeGenres = Array.isArray(genres) ? genres : [];
   const genreMap = useMemo(() => {
+    const safeGenres = Array.isArray(genres) ? genres : [];
     return safeGenres.reduce(
       (acc, genre) => {
         acc[genre.id] = genre.name;
@@ -90,7 +90,7 @@ const Home: React.FC = () => {
       },
       {} as Record<number, string>
     );
-  }, [safeGenres]);
+  }, [genres]);
 
   const continueWatchingMovies = continueWatching.map((item) => item.movie);
 
