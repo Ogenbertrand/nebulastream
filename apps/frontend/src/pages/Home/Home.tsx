@@ -107,7 +107,7 @@ const Home: React.FC = () => {
       <div className="min-h-screen bg-dark-950">
         <Hero />
 
-        <div className="relative z-10 -mt-24 sm:-mt-32 pb-12">
+        <div className="relative z-10 -mt-8 sm:-mt-24 lg:-mt-32 pb-12">
           {isAuthenticated && continueWatchingMovies.length > 0 && (
             <MovieRow
               title="Continue Watching"

@@ -107,7 +107,7 @@ const MovieRow: React.FC<MovieRowProps> = ({ title, movies, loading = false, gen
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
-      className="py-6 relative group"
+      className="py-4 sm:py-6 relative group"
     >
       <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 2xl:px-10 mb-4">
         <h2 className="text-lg sm:text-xl lg:text-2xl 2xl:text-3xl font-semibold text-white tracking-wide">
