@@ -65,9 +65,9 @@ const Watchlist: React.FC = () => {
         <title>My List - NebulaStream</title>
       </Helmet>
 
-      <div className="min-h-screen bg-dark-950 pt-8 sm:pt-10 pb-16">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12">
-          <div className="relative overflow-hidden glass-panel rounded-3xl p-6 sm:p-8 md:p-10 mb-10">
+      <div className="min-h-screen bg-dark-950 pt-6 sm:pt-8 pb-16">
+        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative overflow-hidden glass-panel rounded-3xl p-5 sm:p-7 md:p-9 mb-8">
             <div className="absolute -top-20 -right-10 w-60 h-60 bg-nebula-500/20 blur-[80px]" />
             <div className="absolute -bottom-24 left-0 w-72 h-72 bg-accent-500/20 blur-[90px]" />
             <div className="relative">
@@ -128,7 +128,7 @@ const Watchlist: React.FC = () => {
 
           {/* Favorites */}
           <section>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <div>
                 <h2 className="text-xl font-semibold text-white">My Favorites</h2>
                 <p className="text-white/50 text-sm">Saved for your perfect movie night.</p>
@@ -136,16 +136,20 @@ const Watchlist: React.FC = () => {
             </div>
 
             {favorites.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-4 sm:gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
                 {favorites.map((favorite) => (
                   <div key={favorite.movie_id} className="relative group">
-                    {/* This would need the full movie data - simplified for now */}
-                    <div className="aspect-poster bg-dark-800 rounded-2xl flex items-center justify-center">
-                      <Heart className="w-12 h-12 text-pink-500" />
+                    <div className="aspect-poster bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl flex flex-col items-center justify-center gap-3 border border-white/5">
+                      <div className="w-12 h-12 rounded-full bg-nebula-500/20 flex items-center justify-center">
+                        <Heart className="w-6 h-6 text-nebula-500" />
+                      </div>
+                      <span className="text-xs text-white/60 px-3 text-center">
+                        Favorite #{favorite.movie_id}
+                      </span>
                     </div>
                     <button
                       onClick={() => handleRemoveFavorite(favorite.movie_id)}
-                      className="absolute top-2 right-2 p-2 bg-dark-900/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-2 right-2 p-2 bg-dark-900/90 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <Trash2 className="w-4 h-4 text-red-400" />
                     </button>

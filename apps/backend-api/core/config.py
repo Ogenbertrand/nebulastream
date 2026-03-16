@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     REDIS_PORT: int = 6379
     
     # TMDB API
-    TMDB_API_KEY: str = ""
+    TMDB_API_KEY: str = "82cbe36eb1fe2cea90e6d52997a664b8"
     TMDB_BASE_URL: str = "https://api.themoviedb.org/3"
     TMDB_IMAGE_BASE_URL: str = "https://image.tmdb.org/t/p"
 

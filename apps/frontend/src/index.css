@@ -170,6 +170,11 @@
     aspect-ratio: 2 / 3;
   }
 
+  /* Slightly shorter posters for dense horizontal rows (MovieBox-style). */
+  .aspect-poster-row {
+    aspect-ratio: 3 / 4;
+  }
+
   .hide-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;

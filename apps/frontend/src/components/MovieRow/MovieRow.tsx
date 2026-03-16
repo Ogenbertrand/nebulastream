@@ -30,12 +30,12 @@ const MovieRow: React.FC<MovieRowProps> = ({ title, movies, loading = false, gen
               : width >= 1280
                 ? 240
                 : width >= 1024
-                  ? 224
+                  ? 216
                   : width >= 768
-                    ? 200
+                    ? 176
                     : width >= 640
-                      ? 180
-                      : 150;
+                      ? 156
+                      : 132;
       setCardWidth(nextCardWidth);
       setContainerWidth(scrollRef.current?.clientWidth || 0);
     };
@@ -67,7 +67,7 @@ const MovieRow: React.FC<MovieRowProps> = ({ title, movies, loading = false, gen
     }
   };
 
-  const gap = cardWidth >= 260 ? 24 : cardWidth >= 220 ? 20 : 16;
+  const gap = cardWidth >= 240 ? 18 : cardWidth >= 176 ? 14 : 6;
   const itemWidth = cardWidth + gap;
   const totalWidth = movies.length * itemWidth;
   const overscan = 3;
@@ -80,7 +80,8 @@ const MovieRow: React.FC<MovieRowProps> = ({ title, movies, loading = false, gen
     () => movies.slice(startIndex, endIndex),
     [movies, startIndex, endIndex]
   );
-  const rowHeight = Math.round(cardWidth * 1.65 + 96);
+  // Posters in horizontal rows use a shorter aspect ratio (3/4) + compact caption.
+  const rowHeight = Math.round(cardWidth * 1.4 + 52);
 
   if (loading) {
     return (
@@ -107,9 +108,9 @@ const MovieRow: React.FC<MovieRowProps> = ({ title, movies, loading = false, gen
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
-      className="py-4 sm:py-6 relative group"
+      className="pt-1 pb-0 sm:pt-2 sm:pb-1 relative group"
     >
-      <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 2xl:px-10 mb-4">
+      <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 2xl:px-10 mb-0.5 sm:mb-1">
         <h2 className="text-lg sm:text-xl lg:text-2xl 2xl:text-3xl font-semibold text-white tracking-wide">
           {title}
         </h2>
@@ -131,7 +132,7 @@ const MovieRow: React.FC<MovieRowProps> = ({ title, movies, loading = false, gen
 
         <div
           ref={scrollRef}
-          className="overflow-x-auto hide-scrollbar px-4 sm:px-6 lg:px-8 2xl:px-10 pb-4"
+          className="overflow-x-auto hide-scrollbar px-3 sm:px-6 lg:px-8 2xl:px-10 pb-0"
         >
           <div className="relative" style={{ width: totalWidth || '100%', height: rowHeight }}>
             {visibleMovies.map((movie, index) => {
@@ -145,7 +146,7 @@ const MovieRow: React.FC<MovieRowProps> = ({ title, movies, loading = false, gen
                     width: cardWidth,
                   }}
                 >
-                  <MovieCard movie={movie} genreMap={genreMap} />
+                  <MovieCard movie={movie} genreMap={genreMap} variant="row" />
                 </div>
               );
             })}
