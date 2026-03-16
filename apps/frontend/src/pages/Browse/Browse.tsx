@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { SlidersHorizontal, ChevronRight, Search } from 'lucide-react';
+import { SlidersHorizontal, ChevronRight } from 'lucide-react';
 import MovieCard from '../../components/MovieCard/MovieCard';
 import Loading from '../../components/Loading/Loading';
 import { moviesApi, searchApi } from '../../services/api';
