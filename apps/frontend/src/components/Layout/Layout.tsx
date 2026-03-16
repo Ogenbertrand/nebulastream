@@ -13,11 +13,7 @@ const Layout: React.FC = () => {
   return (
     <div className="min-h-screen bg-dark-950">
       {!hideNavbar && <Navbar />}
-      <main
-        className={`${
-          hideNavbar ? 'pt-0' : 'pt-16 sm:pt-20 lg:pt-24'
-        } pb-20 md:pb-0`}
-      >
+      <main className={`${hideNavbar ? 'pt-0' : 'pt-16 sm:pt-20 lg:pt-24'} pb-20 md:pb-0`}>
         <Outlet />
       </main>
       <MobileNavBar />

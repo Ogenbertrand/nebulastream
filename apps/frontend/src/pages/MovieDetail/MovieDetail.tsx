@@ -247,9 +247,7 @@ const MovieDetail: React.FC = () => {
             <section className="mb-10">
               <div className="glass-panel rounded-3xl p-5 sm:p-7">
                 <h2 className="text-white font-semibold text-lg mb-3">Story</h2>
-                {movie.tagline && (
-                  <p className="text-white/70 italic mb-3">{movie.tagline}</p>
-                )}
+                {movie.tagline && <p className="text-white/70 italic mb-3">{movie.tagline}</p>}
                 {movie.overview && (
                   <p className="text-white/80 leading-relaxed text-sm sm:text-base">
                     {movie.overview}

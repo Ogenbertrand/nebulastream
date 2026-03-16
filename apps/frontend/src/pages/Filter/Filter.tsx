@@ -33,8 +33,7 @@ const Filter: React.FC = () => {
         const yearOk =
           !selectedYear ||
           (m.release_date && new Date(m.release_date).getFullYear() === selectedYear);
-        const genreOk =
-          !selectedGenre || (m.genre_ids && m.genre_ids.includes(selectedGenre));
+        const genreOk = !selectedGenre || (m.genre_ids && m.genre_ids.includes(selectedGenre));
         return yearOk && genreOk;
       }),
     [movies, selectedGenre, selectedYear]
@@ -89,9 +88,7 @@ const Filter: React.FC = () => {
                 key={item.key}
                 onClick={() => setTab(item.key as typeof tab)}
                 className={`pb-2 text-sm ${
-                  tab === item.key
-                    ? 'text-white border-b-2 border-nebula-500'
-                    : 'text-white/60'
+                  tab === item.key ? 'text-white border-b-2 border-nebula-500' : 'text-white/60'
                 }`}
               >
                 {item.label}
@@ -105,9 +102,7 @@ const Filter: React.FC = () => {
             <div className="relative flex-1">
               <select
                 value={selectedGenre ?? ''}
-                onChange={(e) =>
-                  setSelectedGenre(e.target.value ? Number(e.target.value) : null)
-                }
+                onChange={(e) => setSelectedGenre(e.target.value ? Number(e.target.value) : null)}
                 className="w-full appearance-none rounded-full bg-dark-900 border border-white/10 px-3 pr-7 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-nebula-500"
               >
                 <option value="">{genres.length ? 'Genre' : 'Loading genres...'}</option>
@@ -125,9 +120,7 @@ const Filter: React.FC = () => {
             <div className="relative flex-1">
               <select
                 value={selectedYear ?? ''}
-                onChange={(e) =>
-                  setSelectedYear(e.target.value ? Number(e.target.value) : null)
-                }
+                onChange={(e) => setSelectedYear(e.target.value ? Number(e.target.value) : null)}
                 className="w-full appearance-none rounded-full bg-dark-900 border border-white/10 px-3 pr-7 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-nebula-500"
               >
                 <option value="">{years.length ? 'Year' : 'Loading years...'}</option>

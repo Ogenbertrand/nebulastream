@@ -55,11 +55,8 @@ const MovieCard: React.FC<MovieCardProps> = ({
 
   const posterClassName = variant === 'row' ? 'aspect-poster-row' : 'aspect-poster';
   const titleClassName =
-    variant === 'row'
-      ? 'text-[11px] sm:text-xs lg:text-sm'
-      : 'text-xs sm:text-sm lg:text-base';
-  const metaClassName =
-    variant === 'row' ? 'text-[10px] sm:text-[11px]' : 'text-[10px] sm:text-xs';
+    variant === 'row' ? 'text-[11px] sm:text-xs lg:text-sm' : 'text-xs sm:text-sm lg:text-base';
+  const metaClassName = variant === 'row' ? 'text-[10px] sm:text-[11px]' : 'text-[10px] sm:text-xs';
 
   return (
     <motion.div

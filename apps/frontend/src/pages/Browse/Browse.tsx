@@ -259,10 +259,10 @@ const Browse: React.FC = () => {
                     label === 'All'
                       ? 'all'
                       : label.toLowerCase() === 'hollywood'
-                      ? 'hollywood'
-                      : label.toLowerCase() === 'nollywood'
-                      ? 'nollywood'
-                      : label.toLowerCase();
+                        ? 'hollywood'
+                        : label.toLowerCase() === 'nollywood'
+                          ? 'nollywood'
+                          : label.toLowerCase();
 
                   const active = selectedCategory === key;
 

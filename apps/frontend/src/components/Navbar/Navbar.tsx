@@ -193,7 +193,9 @@ const Navbar: React.FC = () => {
       </div>
 
       {/* Mobile search bar (hidden on watchlist/profile) */}
-      {!(location.pathname.startsWith('/watchlist') || location.pathname.startsWith('/profile')) && (
+      {!(
+        location.pathname.startsWith('/watchlist') || location.pathname.startsWith('/profile')
+      ) && (
         <div className="px-4 pb-3 md:hidden">
           <form onSubmit={handleSearch} className="relative">
             <input
@@ -297,12 +299,12 @@ const Navbar: React.FC = () => {
                     link.label === 'Home'
                       ? Home
                       : link.label === 'Movies'
-                      ? Film
-                      : link.label === 'TV Shows'
-                      ? Tv2
-                      : link.label === 'Trending'
-                      ? Flame
-                      : Heart;
+                        ? Film
+                        : link.label === 'TV Shows'
+                          ? Tv2
+                          : link.label === 'Trending'
+                            ? Flame
+                            : Heart;
 
                   const isActive = location.pathname === link.to;
 
