@@ -11,15 +11,18 @@ from typing import Iterable, List, Set
 import httpx
 
 from core.logging import get_logger
+from core.config import settings
 from schemas.stream import StreamSource
 from services.cache import cache_service
 from services.providers import (
     vidsrc_streams,
+    vidsrc_resolver_streams,
     vidcloud_streams,
     superembed_streams,
     twoembed_streams,
     vidlink_streams,
 )
+from services.scraper_engine import scrape_streams
 
 logger = get_logger("stream_finder")
 
@@ -105,8 +108,12 @@ async def find_streams(tmdb_id: int) -> List[StreamSource]:
 
     logger.info("stream.finder_start", tmdb_id=tmdb_id)
 
-    async with httpx.AsyncClient(timeout=15.0) as client:
+    async with httpx.AsyncClient(
+        timeout=15.0,
+        verify=not settings.STREAM_PROVIDER_SKIP_SSL_VERIFY,
+    ) as client:
         provider_tasks = [
+            vidsrc_resolver_streams(tmdb_id, client=client),
             vidsrc_streams(tmdb_id, client=client),
             vidcloud_streams(tmdb_id, client=client),
             superembed_streams(tmdb_id, client=client),
@@ -122,6 +129,13 @@ async def find_streams(tmdb_id: int) -> List[StreamSource]:
                 logger.warning("stream.provider_error", error=str(result))
                 continue
             discovered.extend(result)
+
+        if settings.STREAM_SCRAPER_ENABLED:
+            try:
+                scraper_results = await scrape_streams(tmdb_id)
+                discovered.extend(scraper_results)
+            except Exception as exc:
+                logger.warning("stream.scraper_error", tmdb_id=tmdb_id, error=str(exc))
 
         if not discovered:
             logger.info("stream.finder_no_candidates", tmdb_id=tmdb_id)
