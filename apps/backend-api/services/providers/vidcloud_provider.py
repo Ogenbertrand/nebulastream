@@ -10,7 +10,7 @@ from services.providers.common import scrape_provider_streams
 
 logger = get_logger("provider.vidcloud")
 
-BASE_URL = "https://vidcloud.pro"
+BASE_URL = "https://vidcloud1.com"
 PROVIDER_NAME = "VidCloud"
 RELIABILITY_SCORE = 78.0
 
