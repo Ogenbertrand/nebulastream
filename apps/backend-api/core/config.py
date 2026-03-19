@@ -69,6 +69,14 @@ class Settings(BaseSettings):
     # Streaming Services
     STREAM_PROXY_URL: str = "http://localhost:8080"
     TORRENT_ENGINE_URL: str = "http://localhost:8081"
+    STREAM_PROVIDER_SKIP_SSL_VERIFY: bool = False
+
+    # Scraper Engine
+    STREAM_SCRAPER_ENABLED: bool = True
+    STREAM_SCRAPER_TIMEOUT_SECONDS: int = 20
+    STREAM_SCRAPER_WAIT_MS: int = 2500
+    STREAM_SCRAPER_MAX_CONCURRENCY: int = 2
+    STREAM_SCRAPER_CACHE_TTL: int = 7200
     
     # Feature Flags
     ENABLE_TORRENT_STREAMING: bool = True
