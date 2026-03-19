@@ -3,6 +3,7 @@ Stream endpoints
 """
 
 from typing import List
+from urllib.parse import quote_plus
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -62,7 +63,12 @@ async def get_movie_streams(
     if not sources:
         # Return empty response - frontend can handle no sources
         return StreamResponse(movie_id=movie_id, sources=[])
-    
+
+    # Proxy direct/HLS sources to avoid CORS issues in browsers
+    for source in sources:
+        if source.stream_type != "embed":
+            source.url = f"{settings.STREAM_PROXY_URL}/proxy?url={quote_plus(source.url)}"
+
     # Cache result
     await cache_service.set(cache_key, sources, ttl=settings.CACHE_TTL_STREAMS)
     
