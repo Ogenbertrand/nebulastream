@@ -27,7 +27,7 @@ class StreamAggregator:
                 "name": "vidcloud",
                 "display_name": "VidCloud",
                 "type": "embed",
-                "base_url": "https://vidcloud.pro",
+                "base_url": "https://vidcloud1.com",
                 "reliability": 75
             },
             {
