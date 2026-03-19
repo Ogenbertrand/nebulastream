@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM mcr.microsoft.com/playwright/python:v1.46.0-jammy
 
 WORKDIR /app
 
@@ -6,6 +6,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     gcc \
     libpq-dev \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
@@ -16,8 +17,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY apps/backend-api/ .
 COPY packages/shared-types/ /packages/shared-types/
 
-# Create non-root user
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+# Create non-root user (don't force UID; base image may already use 1000)
+RUN id -u appuser >/dev/null 2>&1 || useradd -m appuser
+RUN chown -R appuser:appuser /app
 USER appuser
 
 EXPOSE 8000
