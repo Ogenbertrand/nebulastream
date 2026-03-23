@@ -292,8 +292,4 @@
     display: none;
   }
 
-  .content-visibility-auto {
-    content-visibility: auto;
-    contain-intrinsic-size: 300px 450px;
-  }
 }
