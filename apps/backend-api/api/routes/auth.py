@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.config import settings
 from core.database import get_db
 from models.user import User
-from schemas.auth import Token, UserLogin, UserRegister
+from schemas.auth import Token, UserRegister
 from schemas.user import User as UserSchema
 
 router = APIRouter()

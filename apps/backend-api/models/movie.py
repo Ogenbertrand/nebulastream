@@ -2,7 +2,7 @@
 Movie model
 """
 
-from datetime import datetime, date
+from datetime import datetime
 from sqlalchemy import Column, String, DateTime, Integer, Float, Text, Date, Boolean
 from sqlalchemy.orm import relationship
 from core.database import Base

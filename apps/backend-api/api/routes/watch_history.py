@@ -46,7 +46,6 @@ async def get_continue_watching(
     db: AsyncSession = Depends(get_db)
 ):
     """Get continue watching list (in-progress movies)"""
-    from schemas.movie import MovieList
     from services.tmdb import tmdb_service
     
     # Get watch history entries that are not completed and have progress

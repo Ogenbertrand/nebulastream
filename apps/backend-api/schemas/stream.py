@@ -4,7 +4,7 @@ Stream schemas
 
 from datetime import datetime
 from typing import List, Optional
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel
 
 
 class StreamSource(BaseModel):

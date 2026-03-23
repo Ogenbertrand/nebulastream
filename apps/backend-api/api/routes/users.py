@@ -2,7 +2,6 @@
 User endpoints
 """
 
-from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -84,8 +83,6 @@ async def get_favorites(
     db: AsyncSession = Depends(get_db)
 ):
     """Get user's favorite movies"""
-    from schemas.movie import MovieList
-    
     result = await db.execute(
         select(Favorite, User).join(User).where(Favorite.user_id == current_user.id)
     )

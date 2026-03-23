@@ -4,7 +4,6 @@ Aggregates streaming sources from multiple providers
 """
 
 from typing import List, Optional
-from core.config import settings
 from core.logging import get_logger
 from schemas.stream import StreamSource
 

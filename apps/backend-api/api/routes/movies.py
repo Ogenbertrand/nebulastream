@@ -4,11 +4,10 @@ Movie endpoints
 
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
-from schemas.movie import Movie, MovieDetail, MovieList
+from schemas.movie import MovieDetail, MovieList
 from services.tmdb import tmdb_service
 from services.catalog_aggregator import catalog_aggregator_client
 from core.logging import get_logger
