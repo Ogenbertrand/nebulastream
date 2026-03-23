@@ -3,18 +3,16 @@ NebulaStream Backend API
 FastAPI application for movie streaming platform
 """
 
-import asyncio
 from contextlib import asynccontextmanager
 
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import ORJSONResponse
 
 from api.routes import auth, health, movies, search, streams, users, watch_history, aggregated_movies, tv
 from core.config import settings
-from core.database import engine, init_db
+from core.database import init_db
 from services.cache import cache_service
 from services.torrent_ingest import torrent_ingest_worker
 
@@ -49,7 +47,6 @@ app = FastAPI(
     title="NebulaStream API",
     description="High-performance movie streaming platform API",
     version="1.0.0",
-    default_response_class=ORJSONResponse,
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
