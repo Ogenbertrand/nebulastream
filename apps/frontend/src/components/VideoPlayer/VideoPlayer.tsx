@@ -117,7 +117,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     if (!autoPlay) {
       setIsPlaying(false);
     }
-  }, [selectedSource?.url]);
+  }, [selectedSource?.url, autoPlay]);
 
   // Hide controls after inactivity
   useEffect(() => {

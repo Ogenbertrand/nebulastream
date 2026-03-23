@@ -34,14 +34,14 @@ const Browse: React.FC = () => {
     }, {});
   }, [genres]);
 
-  const fetchGenres = async () => {
+  const fetchGenres = useCallback(async () => {
     try {
       const data = await searchApi.getGenres(isTv ? 'tv' : 'movie');
       setGenres(data);
     } catch (error) {
       console.error('Failed to fetch genres:', error);
     }
-  };
+  }, [isTv]);
 
   const fetchMovies = useCallback(
     async (pageNum: number, reset: boolean = false) => {
@@ -92,7 +92,7 @@ const Browse: React.FC = () => {
 
   useEffect(() => {
     fetchGenres();
-  }, [isTv]);
+  }, [fetchGenres]);
 
   useEffect(() => {
     setMovies([]);
