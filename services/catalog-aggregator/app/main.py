@@ -1,5 +1,4 @@
 from fastapi import FastAPI, Query
-from fastapi.responses import ORJSONResponse
 
 from app.services.aggregator import CatalogAggregator
 from app.services.cache import cache
@@ -8,7 +7,6 @@ from app.config import settings
 app = FastAPI(
     title="NebulaStream Catalog Aggregator",
     version="0.1.0",
-    default_response_class=ORJSONResponse,
 )
 
 aggregator = CatalogAggregator()
