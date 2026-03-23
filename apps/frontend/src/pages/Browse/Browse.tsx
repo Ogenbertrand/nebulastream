@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { SlidersHorizontal, ChevronRight } from 'lucide-react';
 import MovieCard from '../../components/MovieCard/MovieCard';
 import Loading from '../../components/Loading/Loading';
-import { moviesApi, searchApi } from '../../services/api';
+import { moviesApi, searchApi, tvApi } from '../../services/api';
 import { MovieListItem, Genre } from '../../types';
 
 const Browse: React.FC = () => {
@@ -22,6 +22,10 @@ const Browse: React.FC = () => {
 
   const selectedGenre = searchParams.get('genre');
   const sortBy = searchParams.get('sort') || 'popularity.desc';
+  const typeParam = searchParams.get('type') || 'movie';
+  const contentType = typeParam === 'tv' || typeParam === 'trending' ? typeParam : 'movie';
+  const isTv = contentType === 'tv';
+  const isTrending = contentType === 'trending';
   const genreMap = useMemo(() => {
     const safeGenres = Array.isArray(genres) ? genres : [];
     return safeGenres.reduce<Record<number, string>>((acc, genre) => {
@@ -32,7 +36,7 @@ const Browse: React.FC = () => {
 
   const fetchGenres = async () => {
     try {
-      const data = await searchApi.getGenres();
+      const data = await searchApi.getGenres(isTv ? 'tv' : 'movie');
       setGenres(data);
     } catch (error) {
       console.error('Failed to fetch genres:', error);
@@ -45,7 +49,15 @@ const Browse: React.FC = () => {
         setLoading(true);
         let data: MovieListItem[];
 
-        if (selectedCategory === 'hollywood') {
+        if (isTrending) {
+          data = await moviesApi.getTrending('week', pageNum);
+        } else if (isTv) {
+          if (selectedGenre) {
+            data = await tvApi.getByGenre(parseInt(selectedGenre), pageNum, sortBy);
+          } else {
+            data = await tvApi.getPopular(pageNum);
+          }
+        } else if (selectedCategory === 'hollywood') {
           data = await moviesApi.getByOriginCountry('US', pageNum);
         } else if (selectedCategory === 'nollywood') {
           data = await moviesApi.getByOriginCountry('NG', pageNum);
@@ -75,19 +87,25 @@ const Browse: React.FC = () => {
         setLoading(false);
       }
     },
-    [selectedCategory, selectedGenre, sortBy]
+    [isTrending, isTv, selectedCategory, selectedGenre, sortBy]
   );
 
   useEffect(() => {
     fetchGenres();
-  }, []);
+  }, [isTv]);
 
   useEffect(() => {
     setMovies([]);
     setPage(1);
     setHasMore(true);
     fetchMovies(1, true);
-  }, [selectedGenre, sortBy, fetchMovies]);
+  }, [contentType, selectedGenre, sortBy, selectedCategory, fetchMovies]);
+
+  useEffect(() => {
+    if (isTrending || isTv) {
+      setSelectedCategory('all');
+    }
+  }, [isTrending, isTv]);
 
   useEffect(() => {
     if (movies.length === 0) return;
@@ -133,13 +151,20 @@ const Browse: React.FC = () => {
     [movies]
   );
 
+  const headerTitle = isTrending ? 'Trending Now' : isTv ? 'TV Shows' : 'Browse Movies';
+  const headerSubtitle = isTrending
+    ? 'What everyone is watching this week.'
+    : isTv
+      ? 'Find the best series and new episodes.'
+      : 'Curate your watchlist by genre or mood.';
+
   return (
     <>
       <Helmet>
-        <title>Browse Movies - NebulaStream</title>
+        <title>{headerTitle} - NebulaStream</title>
         <meta
           name="description"
-          content="Browse movies by genre, popularity, ratings, and more on NebulaStream"
+          content="Browse movies and TV shows by genre, popularity, ratings, and more on NebulaStream"
         />
       </Helmet>
 
@@ -148,54 +173,56 @@ const Browse: React.FC = () => {
           {/* Desktop / tablet header */}
           <div className="hidden md:block glass-panel rounded-3xl p-6 sm:p-8 md:p-10 mb-10">
             <h1 className="text-2xl sm:text-3xl font-display font-bold text-white mb-2">
-              Browse the Library
+              {headerTitle}
             </h1>
-            <p className="text-white/60">Curate your watchlist by genre or mood.</p>
+            <p className="text-white/60">{headerSubtitle}</p>
 
-            <div className="flex flex-col lg:flex-row gap-4 mt-6">
-              <div className="flex-1">
-                <p className="text-sm text-white/60 mb-3">Genre</p>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => handleGenreChange(null)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                      !selectedGenre
-                        ? 'bg-nebula-500 text-white'
-                        : 'bg-white/5 text-white/70 hover:bg-white/10'
-                    }`}
-                  >
-                    All
-                  </button>
-                  {genres.map((genre) => (
+            {!isTrending && (
+              <div className="flex flex-col lg:flex-row gap-4 mt-6">
+                <div className="flex-1">
+                  <p className="text-sm text-white/60 mb-3">Genre</p>
+                  <div className="flex flex-wrap gap-2">
                     <button
-                      key={genre.id}
-                      onClick={() => handleGenreChange(genre.id)}
+                      onClick={() => handleGenreChange(null)}
                       className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                        selectedGenre === genre.id.toString()
+                        !selectedGenre
                           ? 'bg-nebula-500 text-white'
                           : 'bg-white/5 text-white/70 hover:bg-white/10'
                       }`}
                     >
-                      {genre.name}
+                      All
                     </button>
-                  ))}
+                    {genres.map((genre) => (
+                      <button
+                        key={genre.id}
+                        onClick={() => handleGenreChange(genre.id)}
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                          selectedGenre === genre.id.toString()
+                            ? 'bg-nebula-500 text-white'
+                            : 'bg-white/5 text-white/70 hover:bg-white/10'
+                        }`}
+                      >
+                        {genre.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm text-white/60 mb-3">Sort By</p>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => handleSortChange(e.target.value)}
+                    className="bg-dark-900/80 text-white rounded-full px-4 py-2 border border-white/10 focus:outline-none focus:ring-2 focus:ring-nebula-500"
+                  >
+                    <option value="popularity.desc">Popularity</option>
+                    <option value="vote_average.desc">Rating</option>
+                    <option value="release_date.desc">Release Date</option>
+                    <option value="vote_count.desc">Most Voted</option>
+                  </select>
                 </div>
               </div>
-
-              <div>
-                <p className="text-sm text-white/60 mb-3">Sort By</p>
-                <select
-                  value={sortBy}
-                  onChange={(e) => handleSortChange(e.target.value)}
-                  className="bg-dark-900/80 text-white rounded-full px-4 py-2 border border-white/10 focus:outline-none focus:ring-2 focus:ring-nebula-500"
-                >
-                  <option value="popularity.desc">Popularity</option>
-                  <option value="vote_average.desc">Rating</option>
-                  <option value="release_date.desc">Release Date</option>
-                  <option value="vote_count.desc">Most Voted</option>
-                </select>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Mobile header inspired by MovieBox */}
@@ -241,86 +268,90 @@ const Browse: React.FC = () => {
               </section>
             )}
 
-            {/* Categories row styled like MovieBox */}
-            <section className="mt-4">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-white font-semibold text-base">Categories</h2>
-                <button
-                  className="flex items-center gap-1 text-xs text-white/70 px-2 py-1 rounded-full bg-white/5"
-                  onClick={() => navigate('/filter')}
-                >
-                  <SlidersHorizontal className="w-3 h-3" />
-                  Filters
-                </button>
-              </div>
-              <div className="flex gap-3 overflow-x-auto pb-1">
-                {['All', 'Hollywood', 'Nollywood', 'Action', 'Comedy', 'Horror'].map((label) => {
-                  const key =
-                    label === 'All'
-                      ? 'all'
-                      : label.toLowerCase() === 'hollywood'
-                        ? 'hollywood'
-                        : label.toLowerCase() === 'nollywood'
-                          ? 'nollywood'
-                          : label.toLowerCase();
+            {/* Categories row styled like MovieBox (movies only) */}
+            {!isTrending && !isTv && (
+              <section className="mt-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-white font-semibold text-base">Categories</h2>
+                  <button
+                    className="flex items-center gap-1 text-xs text-white/70 px-2 py-1 rounded-full bg-white/5"
+                    onClick={() => navigate('/filter')}
+                  >
+                    <SlidersHorizontal className="w-3 h-3" />
+                    Filters
+                  </button>
+                </div>
+                <div className="flex gap-3 overflow-x-auto pb-1">
+                  {['All', 'Hollywood', 'Nollywood', 'Action', 'Comedy', 'Horror'].map((label) => {
+                    const key =
+                      label === 'All'
+                        ? 'all'
+                        : label.toLowerCase() === 'hollywood'
+                          ? 'hollywood'
+                          : label.toLowerCase() === 'nollywood'
+                            ? 'nollywood'
+                            : label.toLowerCase();
 
-                  const active = selectedCategory === key;
+                    const active = selectedCategory === key;
 
-                  const handleClick = () => {
-                    setSelectedCategory(key as typeof selectedCategory);
-                    if (key === 'all') {
-                      handleGenreChange(null);
-                    }
-                  };
+                    const handleClick = () => {
+                      setSelectedCategory(key as typeof selectedCategory);
+                      if (key === 'all') {
+                        handleGenreChange(null);
+                      }
+                    };
 
-                  const bgImage = (categoryBackgrounds as Record<string, string | undefined>)[
-                    label
-                  ];
+                    const bgImage = (categoryBackgrounds as Record<string, string | undefined>)[
+                      label
+                    ];
 
-                  return (
-                    <button
-                      key={label}
-                      onClick={handleClick}
-                      className={`relative h-16 min-w-[120px] rounded-2xl px-4 text-xs font-medium flex items-center justify-between shadow-sm overflow-hidden ${
-                        active ? 'text-white' : 'text-white/90'
-                      }`}
-                    >
-                      {bgImage && (
-                        <div
-                          className="absolute inset-0 bg-cover bg-center"
-                          style={{ backgroundImage: `url(${bgImage})` }}
-                        />
-                      )}
-                      {!bgImage && (
-                        <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-white/5 to-white/0" />
-                      )}
-                      <div
-                        className={`absolute inset-0 bg-gradient-to-br ${
-                          active
-                            ? 'from-black/10 via-black/30 to-black/70'
-                            : 'from-black/40 via-black/60 to-black/80'
+                    return (
+                      <button
+                        key={label}
+                        onClick={handleClick}
+                        className={`relative h-16 min-w-[120px] rounded-2xl px-4 text-xs font-medium flex items-center justify-between shadow-sm overflow-hidden ${
+                          active ? 'text-white' : 'text-white/90'
                         }`}
-                      />
-
-                      <div className="relative z-10 flex items-center justify-between w-full">
-                        <span>{label}</span>
-                        {label === 'All' && (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-black/30">
-                            <SlidersHorizontal className="w-3 h-3" />
-                          </span>
+                      >
+                        {bgImage && (
+                          <div
+                            className="absolute inset-0 bg-cover bg-center"
+                            style={{ backgroundImage: `url(${bgImage})` }}
+                          />
                         )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
+                        {!bgImage && (
+                          <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-white/5 to-white/0" />
+                        )}
+                        <div
+                          className={`absolute inset-0 bg-gradient-to-br ${
+                            active
+                              ? 'from-black/10 via-black/30 to-black/70'
+                              : 'from-black/40 via-black/60 to-black/80'
+                          }`}
+                        />
+
+                        <div className="relative z-10 flex items-center justify-between w-full">
+                          <span>{label}</span>
+                          {label === 'All' && (
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-black/30">
+                              <SlidersHorizontal className="w-3 h-3" />
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
 
             {/* Trending row */}
             {movies.length > 0 && (
               <section>
                 <div className="flex items-center justify-between mb-3 px-1">
-                  <h2 className="text-white font-semibold text-base">Trending Movies</h2>
+                  <h2 className="text-white font-semibold text-base">
+                    {isTv ? 'Trending Shows' : 'Trending Movies'}
+                  </h2>
                   <button className="flex items-center gap-1 text-[11px] text-white/60">
                     View all
                     <ChevronRight className="w-3 h-3" />
@@ -329,7 +360,12 @@ const Browse: React.FC = () => {
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {movies.slice(0, 10).map((movie) => (
                     <div key={movie.id} className="min-w-[122px] max-w-[132px]">
-                      <MovieCard movie={movie} genreMap={genreMap} variant="row" />
+                      <MovieCard
+                        movie={movie}
+                        genreMap={genreMap}
+                        variant="row"
+                        mediaType={isTv ? 'tv' : 'movie'}
+                      />
                     </div>
                   ))}
                 </div>
@@ -341,7 +377,13 @@ const Browse: React.FC = () => {
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-2 sm:gap-4 md:gap-5">
                 {movies.map((movie) => (
-                  <MovieCard key={movie.id} movie={movie} genreMap={genreMap} variant="row" />
+                  <MovieCard
+                    key={movie.id}
+                    movie={movie}
+                    genreMap={genreMap}
+                    variant="row"
+                    mediaType={isTv ? 'tv' : 'movie'}
+                  />
                 ))}
               </div>
 

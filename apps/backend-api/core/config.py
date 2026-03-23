@@ -48,6 +48,11 @@ class Settings(BaseSettings):
     TMDB_API_KEY: str = "82cbe36eb1fe2cea90e6d52997a664b8"
     TMDB_BASE_URL: str = "https://api.themoviedb.org/3"
     TMDB_IMAGE_BASE_URL: str = "https://image.tmdb.org/t/p"
+    TMDB_TIMEOUT_SECONDS: int = 12
+    TMDB_POSTER_SIZE_LIST: str = "w185"
+    TMDB_BACKDROP_SIZE_LIST: str = "w300"
+    TMDB_POSTER_SIZE_DETAIL: str = "w500"
+    TMDB_BACKDROP_SIZE_DETAIL: str = "w1280"
 
     # OMDb API
     OMDB_API_KEY: str = ""
@@ -69,7 +74,17 @@ class Settings(BaseSettings):
     # Streaming Services
     STREAM_PROXY_URL: str = "http://localhost:8080"
     TORRENT_ENGINE_URL: str = "http://localhost:8081"
+    TORRENT_ENGINE_TIMEOUT_SECONDS: int = 15
+    TORRENT_INGEST_POLL_SECONDS: int = 5
+    STREAMING_SERVICE_URL: str = "http://localhost:8090"
+    STREAMING_SERVICE_TIMEOUT_SECONDS: int = 15
+    STREAMING_PREFER_INTERNAL: bool = False
     STREAM_PROVIDER_SKIP_SSL_VERIFY: bool = False
+    STREAM_LOOKUP_TIMEOUT_SECONDS: int = 12
+
+    # Catalog Aggregator
+    CATALOG_AGGREGATOR_URL: str = ""
+    CATALOG_AGGREGATOR_TIMEOUT_SECONDS: int = 5
 
     # Scraper Engine
     STREAM_SCRAPER_ENABLED: bool = True
@@ -77,6 +92,16 @@ class Settings(BaseSettings):
     STREAM_SCRAPER_WAIT_MS: int = 2500
     STREAM_SCRAPER_MAX_CONCURRENCY: int = 2
     STREAM_SCRAPER_CACHE_TTL: int = 7200
+
+    # Captcha Solving (2Captcha)
+    CAPTCHA_2CAPTCHA_API_KEY: str = ""
+    CAPTCHA_2CAPTCHA_TIMEOUT_SECONDS: int = 120
+    CAPTCHA_2CAPTCHA_POLL_SECONDS: int = 5
+
+    # VidSrc resolver overrides
+    VIDSRC_RCP_COOKIE: str = ""
+    VIDSRC_TURNSTILE_INTERCEPT: bool = False
+    VIDSRC_TURNSTILE_INTERCEPT_TIMEOUT_SECONDS: int = 25
     
     # Feature Flags
     ENABLE_TORRENT_STREAMING: bool = True

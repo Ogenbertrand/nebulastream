@@ -61,5 +61,5 @@
     "prettier": "^3.3.3",
     "tailwindcss": "^3.3.5"
   },
-  "proxy": "http://localhost:8000"
+  "proxy": "http://backend-api:8000"
 }

@@ -50,6 +50,13 @@ class StreamAggregator:
                 "type": "embed",
                 "base_url": "https://2embed.org",
                 "reliability": 65
+            },
+            {
+                "name": "vidlink",
+                "display_name": "VidLink",
+                "type": "embed",
+                "base_url": "https://vidlink.pro",
+                "reliability": 60
             }
         ]
     
@@ -82,6 +89,39 @@ class StreamAggregator:
         # Sort by reliability score (highest first)
         sources.sort(key=lambda x: x.reliability_score, reverse=True)
         
+        return sources
+
+    async def get_tv_streams(
+        self,
+        tv_id: int,
+        season: int,
+        episode: int,
+        preferred_quality: str = "720p",
+        preferred_language: str = "en",
+    ) -> List[StreamSource]:
+        """Get streaming sources for a TV episode"""
+        sources = []
+
+        tmdb_id = tv_id
+
+        for provider in self.providers:
+            try:
+                source = self._generate_tv_source(
+                    provider, tmdb_id, season, episode, preferred_quality, preferred_language
+                )
+                if source:
+                    sources.append(source)
+            except Exception as e:
+                logger.warning(
+                    "Failed to generate TV source",
+                    provider=provider["name"],
+                    tv_id=tv_id,
+                    season=season,
+                    episode=episode,
+                    error=str(e),
+                )
+
+        sources.sort(key=lambda x: x.reliability_score, reverse=True)
         return sources
     
     def _generate_source(
@@ -123,6 +163,45 @@ class StreamAggregator:
             # These would typically come from your own infrastructure
             pass
         
+        return None
+
+    def _generate_tv_source(
+        self,
+        provider: dict,
+        tmdb_id: int,
+        season: int,
+        episode: int,
+        quality: str,
+        language: str,
+    ) -> Optional[StreamSource]:
+        """Generate TV stream source for a provider"""
+        provider_type = provider["type"]
+        base_url = provider["base_url"]
+
+        if provider_type == "embed":
+            if "vidcloud" in provider["name"]:
+                url = f"{base_url}/embed/tv/{tmdb_id}/{season}/{episode}"
+            elif "vidsrc" in provider["name"]:
+                url = f"{base_url}/embed/tv/{tmdb_id}/{season}/{episode}"
+            elif "superembed" in provider["name"] or "multiembed" in provider["name"]:
+                url = f"{base_url}/?video_id={tmdb_id}&tmdb=1&s={season}&e={episode}"
+            elif "2embed" in provider["name"]:
+                url = f"{base_url}/embed/tmdb/tv?id={tmdb_id}&s={season}&e={episode}"
+            elif "vidlink" in provider["name"]:
+                url = f"{base_url}/tv/{tmdb_id}/{season}/{episode}"
+            else:
+                url = f"{base_url}/embed/tv/{tmdb_id}/{season}/{episode}"
+
+            return StreamSource(
+                url=url,
+                quality=quality,
+                stream_type="embed",
+                language=language,
+                subtitles=[],
+                provider_name=provider["display_name"],
+                reliability_score=provider["reliability"],
+            )
+
         return None
     
     async def check_stream_health(self, url: str) -> bool:

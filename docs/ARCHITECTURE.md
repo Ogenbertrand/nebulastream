@@ -35,6 +35,11 @@ NebulaStream is a modern movie streaming platform built with a microservices arc
 │  │Engine     │  │
 │  │(Rust)     │  │
 │  └───────────┘  │
+│  ┌───────────┐  │
+│  │Streaming  │  │
+│  │Service    │  │
+│  │(Rust)     │  │
+│  └───────────┘  │
 └─────────────────┘
 ```
 
@@ -79,6 +84,15 @@ NebulaStream is a modern movie streaming platform built with a microservices arc
   - Download management
   - Stream preparation
 
+### Streaming Service (Rust)
+- **Port**: 8090
+- **Technology**: Rust 1.85, Axum
+- **Features**:
+  - Playback session issuance
+  - Signed master/variant HLS manifests
+  - Segment access control
+  - Object storage caching (MinIO/S3)
+
 ### PostgreSQL Database
 - **Port**: 5432
 - **Technology**: PostgreSQL 15
@@ -119,6 +133,17 @@ User → Frontend → Backend API (get streams)
                  Stream Proxy → External Source
                     ↓
                  User (video playback)
+```
+
+### Streaming Flow (Internal HLS)
+```
+User → Frontend → Backend API (create session)
+                   ↓
+            Streaming Service (Rust)
+                   ↓
+             MinIO / S3 (segments)
+                   ↓
+               User (HLS playback)
 ```
 
 ### Authentication Flow

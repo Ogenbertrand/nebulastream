@@ -12,10 +12,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import ORJSONResponse
 
-from api.routes import auth, health, movies, search, streams, users, watch_history, aggregated_movies
+from api.routes import auth, health, movies, search, streams, users, watch_history, aggregated_movies, tv
 from core.config import settings
 from core.database import engine, init_db
 from services.cache import cache_service
+from services.torrent_ingest import torrent_ingest_worker
 
 logger = structlog.get_logger()
 
@@ -31,12 +32,16 @@ async def lifespan(app: FastAPI):
     
     # Initialize cache
     await cache_service.connect()
+
+    # Start torrent ingest polling loop
+    torrent_ingest_worker.start_background_polling(settings.TORRENT_INGEST_POLL_SECONDS)
     
     yield
     
     # Shutdown
     logger.info("Shutting down NebulaStream API")
     await cache_service.disconnect()
+    await torrent_ingest_worker.stop_background_polling()
 
 
 # Create FastAPI application
@@ -65,6 +70,7 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.include_router(health.router, tags=["Health"])
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 app.include_router(movies.router, prefix="/movies", tags=["Movies"])
+app.include_router(tv.router, prefix="/tv", tags=["TV"])
 app.include_router(search.router, prefix="/search", tags=["Search"])
 app.include_router(streams.router, prefix="/streams", tags=["Streams"])
 app.include_router(users.router, prefix="/users", tags=["Users"])

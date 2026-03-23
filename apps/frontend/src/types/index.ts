@@ -11,6 +11,9 @@ export interface Movie {
   backdrop_path?: string;
   release_date?: string;
   runtime?: number;
+  number_of_seasons?: number;
+  number_of_episodes?: number;
+  status?: string;
   vote_average: number;
   vote_count: number;
   popularity: number;
@@ -21,6 +24,7 @@ export interface Movie {
   crew?: CrewMember[];
   trailers?: Trailer[];
   similar?: MovieListItem[];
+  seasons?: SeasonSummary[];
 }
 
 export interface MovieListItem {
@@ -32,6 +36,7 @@ export interface MovieListItem {
   vote_average: number;
   release_date?: string;
   genre_ids: number[];
+  media_type?: 'movie' | 'tv';
 }
 
 export interface Genre {
@@ -62,6 +67,27 @@ export interface Trailer {
   type: string;
 }
 
+export interface SeasonSummary {
+  id: number;
+  name: string;
+  season_number: number;
+  episode_count: number;
+  overview?: string;
+  poster_path?: string;
+  air_date?: string;
+}
+
+export interface Episode {
+  id: number;
+  name: string;
+  overview?: string;
+  episode_number: number;
+  season_number: number;
+  still_path?: string;
+  air_date?: string;
+  runtime?: number;
+}
+
 // Stream types
 export interface StreamSource {
   url: string;
@@ -69,6 +95,7 @@ export interface StreamSource {
   stream_type: string;
   language: string;
   subtitles: Subtitle[];
+  headers?: Record<string, string>;
   provider_name: string;
   reliability_score: number;
 }
@@ -83,6 +110,14 @@ export interface StreamResponse {
   movie_id: number;
   sources: StreamSource[];
   subtitles: Subtitle[];
+}
+
+export interface PlaybackSessionResponse {
+  session_id: string;
+  manifest_url: string;
+  status: string;
+  ready: boolean;
+  expires_at: string;
 }
 
 // User types

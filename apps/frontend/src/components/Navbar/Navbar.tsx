@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../../store/authStore';
+import Wordmark from '../Brand/Wordmark';
 
 const Navbar: React.FC = () => {
   const location = useLocation();
@@ -37,9 +38,22 @@ const Navbar: React.FC = () => {
     { to: '/', label: 'Home' },
     { to: '/browse', label: 'Movies' },
     { to: '/browse?type=tv', label: 'TV Shows' },
-    { to: '/browse?sort=popularity.desc', label: 'Trending' },
+    { to: '/browse?type=trending', label: 'Trending' },
     { to: '/watchlist', label: 'My List' },
   ];
+
+  const isNavActive = (to: string) => {
+    const [path, query = ''] = to.split('?');
+    if (location.pathname !== path) return false;
+    if (!query) return true;
+
+    const current = new URLSearchParams(location.search);
+    const target = new URLSearchParams(query);
+    for (const [key, value] of target.entries()) {
+      if (current.get(key) !== value) return false;
+    }
+    return true;
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,18 +74,8 @@ const Navbar: React.FC = () => {
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 2xl:px-10">
         <div className="flex items-center justify-between py-3 sm:py-4">
           {/* Brand */}
-          <Link to="/" className="flex items-center gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-nebula-500/20 border border-nebula-500/40 flex items-center justify-center">
-              <Film className="w-4 h-4 sm:w-5 sm:h-5 text-nebula-500" />
-            </div>
-            <div className="leading-tight">
-              <span className="text-white font-display text-base sm:text-lg lg:text-xl tracking-wide">
-                NebulaStream
-              </span>
-              <span className="block text-[9px] sm:text-[10px] uppercase tracking-[0.4em] text-white/50">
-                CINEMA
-              </span>
-            </div>
+          <Link to="/" className="flex items-center">
+            <Wordmark size="lg" />
           </Link>
 
           {/* Desktop Nav */}
@@ -80,7 +84,7 @@ const Navbar: React.FC = () => {
               <Link
                 key={link.to}
                 to={link.to}
-                className={`nav-link ${location.pathname === link.to ? 'active' : ''}`}
+                className={`nav-link ${isNavActive(link.to) ? 'active' : ''}`}
               >
                 {link.label}
               </Link>
@@ -306,7 +310,7 @@ const Navbar: React.FC = () => {
                             ? Flame
                             : Heart;
 
-                  const isActive = location.pathname === link.to;
+                  const isActive = isNavActive(link.to);
 
                   return (
                     <Link

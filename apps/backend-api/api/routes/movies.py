@@ -10,15 +10,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_db
 from schemas.movie import Movie, MovieDetail, MovieList
 from services.tmdb import tmdb_service
+from services.catalog_aggregator import catalog_aggregator_client
+from core.logging import get_logger
 from services.cache import cache_service
 from core.config import settings
 
 router = APIRouter()
+logger = get_logger("movies")
 
 
 @router.get("/trending", response_model=List[MovieList])
 async def get_trending(
-    time_window: str = Query("week", regex="^(day|week)$"),
+    time_window: str = Query("week", pattern="^(day|week)$"),
     page: int = Query(1, ge=1),
     db: AsyncSession = Depends(get_db)
 ):
@@ -30,11 +33,23 @@ async def get_trending(
     if cached:
         return cached
     
-    # Fetch from TMDB
-    movies = await tmdb_service.get_trending(time_window, page)
+    movies = []
+    if catalog_aggregator_client.enabled and time_window == "week":
+        try:
+            movies = await catalog_aggregator_client.trending("movie", page)
+        except Exception as exc:
+            logger.warning("catalog_aggregator_failed", endpoint="trending", error=str(exc))
+
+    if not movies:
+        movies = await tmdb_service.get_trending(time_window, page)
     
+    if not movies:
+        stale = await cache_service.get_stale(cache_key)
+        if stale:
+            return stale
+
     # Cache result
-    await cache_service.set(cache_key, movies, ttl=settings.CACHE_TTL_TRENDING)
+    await cache_service.set_with_stale(cache_key, movies, ttl=settings.CACHE_TTL_TRENDING)
     
     return movies
 
@@ -51,8 +66,20 @@ async def get_popular(
     if cached:
         return cached
     
-    movies = await tmdb_service.get_popular(page)
-    await cache_service.set(cache_key, movies, ttl=settings.CACHE_TTL_TRENDING)
+    movies = []
+    if catalog_aggregator_client.enabled:
+        try:
+            movies = await catalog_aggregator_client.popular("movie", page)
+        except Exception as exc:
+            logger.warning("catalog_aggregator_failed", endpoint="popular", error=str(exc))
+
+    if not movies:
+        movies = await tmdb_service.get_popular(page)
+    if not movies:
+        stale = await cache_service.get_stale(cache_key)
+        if stale:
+            return stale
+    await cache_service.set_with_stale(cache_key, movies, ttl=settings.CACHE_TTL_TRENDING)
     
     return movies
 
@@ -69,8 +96,20 @@ async def get_top_rated(
     if cached:
         return cached
     
-    movies = await tmdb_service.get_top_rated(page)
-    await cache_service.set(cache_key, movies, ttl=settings.CACHE_TTL_TRENDING)
+    movies = []
+    if catalog_aggregator_client.enabled:
+        try:
+            movies = await catalog_aggregator_client.top_rated("movie", page)
+        except Exception as exc:
+            logger.warning("catalog_aggregator_failed", endpoint="top_rated", error=str(exc))
+
+    if not movies:
+        movies = await tmdb_service.get_top_rated(page)
+    if not movies:
+        stale = await cache_service.get_stale(cache_key)
+        if stale:
+            return stale
+    await cache_service.set_with_stale(cache_key, movies, ttl=settings.CACHE_TTL_TRENDING)
     
     return movies
 
@@ -88,7 +127,11 @@ async def get_upcoming(
         return cached
     
     movies = await tmdb_service.get_upcoming(page)
-    await cache_service.set(cache_key, movies, ttl=settings.CACHE_TTL_TRENDING)
+    if not movies:
+        stale = await cache_service.get_stale(cache_key)
+        if stale:
+            return stale
+    await cache_service.set_with_stale(cache_key, movies, ttl=settings.CACHE_TTL_TRENDING)
     
     return movies
 
@@ -106,7 +149,11 @@ async def get_now_playing(
         return cached
     
     movies = await tmdb_service.get_now_playing(page)
-    await cache_service.set(cache_key, movies, ttl=settings.CACHE_TTL_TRENDING)
+    if not movies:
+        stale = await cache_service.get_stale(cache_key)
+        if stale:
+            return stale
+    await cache_service.set_with_stale(cache_key, movies, ttl=settings.CACHE_TTL_TRENDING)
     
     return movies
 
@@ -115,7 +162,7 @@ async def get_now_playing(
 async def get_movies_by_genre(
     genre_id: int,
     page: int = Query(1, ge=1),
-    sort_by: str = Query("popularity.desc", regex=r"^(popularity|release_date|vote_average|vote_count)\.(asc|desc)$"),
+    sort_by: str = Query("popularity.desc", pattern=r"^(popularity|release_date|vote_average|vote_count)\.(asc|desc)$"),
     db: AsyncSession = Depends(get_db)
 ):
     """Get movies by genre"""
@@ -126,7 +173,11 @@ async def get_movies_by_genre(
         return cached
     
     movies = await tmdb_service.get_movies_by_genre(genre_id, page, sort_by)
-    await cache_service.set(cache_key, movies, ttl=settings.CACHE_TTL_TRENDING)
+    if not movies:
+        stale = await cache_service.get_stale(cache_key)
+        if stale:
+            return stale
+    await cache_service.set_with_stale(cache_key, movies, ttl=settings.CACHE_TTL_TRENDING)
     
     return movies
 
@@ -136,7 +187,7 @@ async def get_movies_by_origin_country(
     country_code: str,
     page: int = Query(1, ge=1),
     genre_id: Optional[int] = Query(None),
-    sort_by: str = Query("popularity.desc", regex=r"^(popularity|release_date|vote_average|vote_count)\.(asc|desc)$"),
+    sort_by: str = Query("popularity.desc", pattern=r"^(popularity|release_date|vote_average|vote_count)\.(asc|desc)$"),
     db: AsyncSession = Depends(get_db),
 ):
     """Get movies by origin country (optional genre filter)"""
@@ -153,7 +204,11 @@ async def get_movies_by_origin_country(
         genre_id=genre_id,
         sort_by=sort_by,
     )
-    await cache_service.set(cache_key, movies, ttl=settings.CACHE_TTL_TRENDING)
+    if not movies:
+        stale = await cache_service.get_stale(cache_key)
+        if stale:
+            return stale
+    await cache_service.set_with_stale(cache_key, movies, ttl=settings.CACHE_TTL_TRENDING)
 
     return movies
 

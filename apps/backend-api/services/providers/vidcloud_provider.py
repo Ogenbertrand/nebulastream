@@ -20,6 +20,16 @@ async def _get_streams(tmdb_id: int, client: httpx.AsyncClient) -> List[StreamSo
     return await scrape_provider_streams(embed_url, PROVIDER_NAME, RELIABILITY_SCORE, client)
 
 
+async def _get_tv_streams(
+    tmdb_id: int,
+    season: int,
+    episode: int,
+    client: httpx.AsyncClient,
+) -> List[StreamSource]:
+    embed_url = f"{BASE_URL}/embed/tv/{tmdb_id}/{season}/{episode}"
+    return await scrape_provider_streams(embed_url, PROVIDER_NAME, RELIABILITY_SCORE, client)
+
+
 async def get_streams(
     tmdb_id: int,
     client: Optional[httpx.AsyncClient] = None,
@@ -28,3 +38,15 @@ async def get_streams(
         async with httpx.AsyncClient(timeout=15.0) as owned_client:
             return await _get_streams(tmdb_id, owned_client)
     return await _get_streams(tmdb_id, client)
+
+
+async def get_tv_streams(
+    tmdb_id: int,
+    season: int,
+    episode: int,
+    client: Optional[httpx.AsyncClient] = None,
+) -> List[StreamSource]:
+    if client is None:
+        async with httpx.AsyncClient(timeout=15.0) as owned_client:
+            return await _get_tv_streams(tmdb_id, season, episode, owned_client)
+    return await _get_tv_streams(tmdb_id, season, episode, client)

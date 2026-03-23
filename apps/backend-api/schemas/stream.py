@@ -14,6 +14,7 @@ class StreamSource(BaseModel):
     stream_type: str = "mp4"  # hls, dash, mp4, webm
     language: str = "en"
     subtitles: List[dict] = []
+    headers: Optional[dict] = None
     provider_name: str
     reliability_score: float = 50.0
 
@@ -47,6 +48,15 @@ class StreamResponse(BaseModel):
     movie_id: int
     sources: List[StreamSource]
     subtitles: List[dict] = []
+
+
+class PlaybackSessionResponse(BaseModel):
+    """Playback session response from streaming service"""
+    session_id: str
+    manifest_url: str
+    status: str
+    ready: bool
+    expires_at: datetime
     
 
 class ProviderInfo(BaseModel):

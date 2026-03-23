@@ -10,6 +10,7 @@ const Browse = React.lazy(() => import('./pages/Browse/Browse'));
 const FilterPage = React.lazy(() => import('./pages/Filter/Filter'));
 const Search = React.lazy(() => import('./pages/Search/Search'));
 const MovieDetail = React.lazy(() => import('./pages/MovieDetail/MovieDetail'));
+const TVDetail = React.lazy(() => import('./pages/TVDetail/TVDetail'));
 const Player = React.lazy(() => import('./pages/Player/Player'));
 const Login = React.lazy(() => import('./pages/Auth/Login'));
 const Register = React.lazy(() => import('./pages/Auth/Register'));
@@ -43,7 +44,9 @@ function App() {
             <Route path="filter" element={<FilterPage />} />
             <Route path="search" element={<Search />} />
             <Route path="movie/:id" element={<MovieDetail />} />
+            <Route path="tv/:id" element={<TVDetail />} />
             <Route path="watch/:id" element={<Player />} />
+            <Route path="watch/tv/:id" element={<Player />} />
             <Route path="profile" element={isAuthenticated ? <Profile /> : <Login />} />
             <Route path="watchlist" element={isAuthenticated ? <Watchlist /> : <Login />} />
             <Route path="*" element={<NotFound />} />

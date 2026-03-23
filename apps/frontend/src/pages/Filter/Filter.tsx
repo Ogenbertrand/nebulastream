@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import MovieCard from '../../components/MovieCard/MovieCard';
 import Loading from '../../components/Loading/Loading';
-import { moviesApi, searchApi } from '../../services/api';
+import { moviesApi, searchApi, tvApi } from '../../services/api';
 import { Genre, MovieListItem } from '../../types';
 
 const Filter: React.FC = () => {
@@ -43,19 +43,35 @@ const Filter: React.FC = () => {
     const load = async () => {
       try {
         setLoading(true);
-        const [movieData, genreData] = await Promise.all([
-          moviesApi.getPopular(1),
-          searchApi.getGenres(),
-        ]);
-        setMovies(movieData);
-        setGenres(genreData);
+        if (tab === 'tv') {
+          const [tvData, genreData] = await Promise.all([
+            tvApi.getPopular(1),
+            searchApi.getGenres('tv'),
+          ]);
+          setMovies(tvData);
+          setGenres(genreData);
+        } else if (tab === 'animation') {
+          const [movieData, genreData] = await Promise.all([
+            moviesApi.getByGenre(16, 1),
+            searchApi.getGenres('movie'),
+          ]);
+          setMovies(movieData);
+          setGenres(genreData);
+        } else {
+          const [movieData, genreData] = await Promise.all([
+            moviesApi.getPopular(1),
+            searchApi.getGenres('movie'),
+          ]);
+          setMovies(movieData);
+          setGenres(genreData);
+        }
       } finally {
         setLoading(false);
       }
     };
 
     load();
-  }, []);
+  }, [tab]);
 
   return (
     <>
@@ -139,14 +155,16 @@ const Filter: React.FC = () => {
             </button>
           </div>
 
-          <h2 className="text-white font-semibold mb-3 text-sm">Watch Movies</h2>
+          <h2 className="text-white font-semibold mb-3 text-sm">
+            {tab === 'tv' ? 'Watch TV Shows' : tab === 'animation' ? 'Watch Animation' : 'Watch Movies'}
+          </h2>
 
           {loading ? (
             <Loading />
           ) : (
             <div className="grid grid-cols-3 gap-3 pb-8">
               {filteredMovies.map((movie) => (
-                <MovieCard key={movie.id} movie={movie} />
+                <MovieCard key={movie.id} movie={movie} mediaType={tab === 'tv' ? 'tv' : 'movie'} />
               ))}
             </div>
           )}

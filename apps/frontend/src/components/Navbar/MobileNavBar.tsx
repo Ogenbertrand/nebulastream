@@ -20,10 +20,16 @@ const MobileNavBar: React.FC = () => {
   ];
 
   const isActive = (to: string) => {
-    // Simple startsWith check so query params still work
-    return location.pathname === '/' && to === '/'
-      ? true
-      : location.pathname.startsWith(to.replace(/\?.*$/, '')) && to !== '/';
+    const [path, query = ''] = to.split('?');
+    if (location.pathname !== path) return false;
+    if (!query) return true;
+
+    const current = new URLSearchParams(location.search);
+    const target = new URLSearchParams(query);
+    for (const [key, value] of target.entries()) {
+      if (current.get(key) !== value) return false;
+    }
+    return true;
   };
 
   return (

@@ -29,9 +29,9 @@ interface MovieState {
   searchQuery: string;
 
   // Actions
-  fetchTrending: (timeWindow?: 'day' | 'week') => Promise<void>;
-  fetchPopular: () => Promise<void>;
-  fetchTopRated: () => Promise<void>;
+  fetchTrending: (timeWindow?: 'day' | 'week', page?: number) => Promise<void>;
+  fetchPopular: (page?: number) => Promise<void>;
+  fetchTopRated: (page?: number) => Promise<void>;
   fetchGenres: () => Promise<void>;
   fetchMovieDetail: (movieId: number) => Promise<void>;
   searchMovies: (query: string) => Promise<void>;
@@ -60,10 +60,10 @@ export const useMovieStore = create<MovieState>((set, get) => ({
   searchQuery: '',
 
   // Actions
-  fetchTrending: async (timeWindow = 'week') => {
+  fetchTrending: async (timeWindow = 'week', page = 1) => {
     try {
       set({ trendingLoading: true });
-      const trending = await moviesApi.getTrending(timeWindow);
+      const trending = await moviesApi.getTrending(timeWindow, page);
       set({ trending });
     } catch (error) {
       console.error('Failed to fetch trending:', error);
@@ -72,10 +72,10 @@ export const useMovieStore = create<MovieState>((set, get) => ({
     }
   },
 
-  fetchPopular: async () => {
+  fetchPopular: async (page = 1) => {
     try {
       set({ popularLoading: true });
-      const popular = await moviesApi.getPopular();
+      const popular = await moviesApi.getPopular(page);
       set({ popular });
     } catch (error) {
       console.error('Failed to fetch popular:', error);
@@ -84,10 +84,10 @@ export const useMovieStore = create<MovieState>((set, get) => ({
     }
   },
 
-  fetchTopRated: async () => {
+  fetchTopRated: async (page = 1) => {
     try {
       set({ topRatedLoading: true });
-      const topRated = await moviesApi.getTopRated();
+      const topRated = await moviesApi.getTopRated(page);
       set({ topRated });
     } catch (error) {
       console.error('Failed to fetch top rated:', error);

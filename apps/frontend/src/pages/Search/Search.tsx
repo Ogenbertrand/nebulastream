@@ -30,8 +30,28 @@ const Search: React.FC = () => {
 
     try {
       setLoading(true);
-      const results = await searchApi.searchMovies(q);
-      setMovies(results);
+      const [movieResults, tvResults] = await Promise.all([
+        searchApi.searchMovies(q),
+        searchApi.searchTv(q),
+      ]);
+
+      const merged = [
+        ...movieResults.map((item) => ({ ...item, media_type: 'movie' as const })),
+        ...tvResults.map((item) => ({ ...item, media_type: 'tv' as const })),
+      ];
+
+      merged.sort((a, b) => {
+        const ratingDiff = (b.vote_average || 0) - (a.vote_average || 0);
+        if (ratingDiff !== 0) return ratingDiff;
+        const aDate = a.release_date ? new Date(a.release_date).getTime() : 0;
+        const bDate = b.release_date ? new Date(b.release_date).getTime() : 0;
+        return bDate - aDate;
+      });
+
+      const withImages = merged.filter(
+        (item) => item.poster_path || item.backdrop_path
+      );
+      setMovies(withImages);
     } catch (error) {
       console.error('Search failed:', error);
     } finally {
@@ -158,7 +178,7 @@ const Search: React.FC = () => {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
                 <h2 className="text-xl font-semibold text-white">Results for "{searchQuery}"</h2>
                 <span className="text-white/60">
-                  {movies.length} {movies.length === 1 ? 'movie' : 'movies'} found
+                  {movies.length} {movies.length === 1 ? 'title' : 'titles'} found
                 </span>
               </div>
 
@@ -167,7 +187,7 @@ const Search: React.FC = () => {
               ) : movies.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-4 sm:gap-6">
                   {movies.map((movie) => (
-                    <MovieCard key={movie.id} movie={movie} />
+                    <MovieCard key={`${movie.media_type || 'movie'}-${movie.id}`} movie={movie} />
                   ))}
                 </div>
               ) : (

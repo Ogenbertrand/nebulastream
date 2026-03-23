@@ -42,6 +42,27 @@ class Trailer(BaseModel):
     type: str
 
 
+class SeasonSummary(BaseModel):
+    id: int
+    name: str
+    season_number: int
+    episode_count: int
+    overview: Optional[str] = None
+    poster_path: Optional[str] = None
+    air_date: Optional[date] = None
+
+
+class Episode(BaseModel):
+    id: int
+    name: str
+    overview: Optional[str] = None
+    episode_number: int
+    season_number: int
+    still_path: Optional[str] = None
+    air_date: Optional[date] = None
+    runtime: Optional[int] = None
+
+
 class MovieBase(BaseModel):
     """Base movie schema"""
     title: str
@@ -75,6 +96,9 @@ class Movie(MovieBase):
     runtime: Optional[int] = None
     adult: bool = False
     original_language: Optional[str] = "en"
+    number_of_seasons: Optional[int] = None
+    number_of_episodes: Optional[int] = None
+    status: Optional[str] = None
     genres: List[Genre] = []
     
     class Config:
@@ -87,6 +111,7 @@ class MovieDetail(Movie):
     crew: List[CrewMember] = []
     trailers: List[Trailer] = []
     similar: List[Movie] = []
+    seasons: List[SeasonSummary] = []
 
 
 class MovieList(BaseModel):

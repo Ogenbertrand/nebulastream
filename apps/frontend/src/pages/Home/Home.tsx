@@ -4,9 +4,20 @@ import Hero from '../../components/Hero/Hero';
 import MovieRow from '../../components/MovieRow/MovieRow';
 import Loading from '../../components/Loading/Loading';
 import { useMovieStore } from '../../store/movieStore';
-import { moviesApi, watchHistoryApi } from '../../services/api';
+import { moviesApi, tvApi, watchHistoryApi } from '../../services/api';
 import { MovieListItem, ContinueWatching } from '../../types';
 import { useAuthStore } from '../../store/authStore';
+
+const shuffleMovies = <T,>(items: T[]) => {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+};
+
+const stablePage = () => 1;
 
 const Home: React.FC = () => {
   const {
@@ -30,6 +41,9 @@ const Home: React.FC = () => {
   const [comedyMovies, setComedyMovies] = useState<MovieListItem[]>([]);
   const [dramaMovies, setDramaMovies] = useState<MovieListItem[]>([]);
   const [recentMovies, setRecentMovies] = useState<MovieListItem[]>([]);
+  const [recentTv, setRecentTv] = useState<MovieListItem[]>([]);
+  const [trendingTv, setTrendingTv] = useState<MovieListItem[]>([]);
+  const [tvSeriesForYou, setTvSeriesForYou] = useState<MovieListItem[]>([]);
   const [hollywoodMovies, setHollywoodMovies] = useState<MovieListItem[]>([]);
   const [bollywoodMovies, setBollywoodMovies] = useState<MovieListItem[]>([]);
   const [nollywoodMovies, setNollywoodMovies] = useState<MovieListItem[]>([]);
@@ -41,9 +55,9 @@ const Home: React.FC = () => {
   const [loadingExtras, setLoadingExtras] = useState(true);
 
   useEffect(() => {
-    fetchTrending();
-    fetchPopular();
-    fetchTopRated();
+    fetchTrending('week', stablePage());
+    fetchPopular(stablePage());
+    fetchTopRated(stablePage());
     fetchGenres();
   }, [fetchTrending, fetchPopular, fetchTopRated, fetchGenres]);
 
@@ -55,43 +69,62 @@ const Home: React.FC = () => {
         const comedyId = genres.find((g) => g.name.toLowerCase() === 'comedy')?.id || 35;
         const dramaId = genres.find((g) => g.name.toLowerCase() === 'drama')?.id || 18;
 
-        const [
-          action,
-          comedy,
-          drama,
-          recent,
-          hollywood,
-          bollywood,
-          nollywood,
-          korean,
-          japanese,
-          chinese,
-          anime,
-        ] = await Promise.all([
-          moviesApi.getByGenre(actionId, 1),
-          moviesApi.getByGenre(comedyId, 1),
-          moviesApi.getByGenre(dramaId, 1),
-          moviesApi.getNowPlaying(1),
-          moviesApi.getByOriginCountry('US', 1),
-          moviesApi.getByOriginCountry('IN', 1),
-          moviesApi.getByOriginCountry('NG', 1),
-          moviesApi.getByOriginCountry('KR', 1),
-          moviesApi.getByOriginCountry('JP', 1),
-          moviesApi.getByOriginCountry('CN', 1),
-          moviesApi.getByOriginCountry('JP', 1, 16),
-        ]);
+        const tasks: Promise<void>[] = [
+          moviesApi
+            .getByGenre(actionId, stablePage())
+            .then((data) => setActionMovies(shuffleMovies(data)))
+            .catch((error) => console.error('Failed to load action movies:', error)),
+          moviesApi
+            .getByGenre(comedyId, stablePage())
+            .then((data) => setComedyMovies(shuffleMovies(data)))
+            .catch((error) => console.error('Failed to load comedy movies:', error)),
+          moviesApi
+            .getByGenre(dramaId, stablePage())
+            .then((data) => setDramaMovies(shuffleMovies(data)))
+            .catch((error) => console.error('Failed to load drama movies:', error)),
+          moviesApi
+            .getNowPlaying(stablePage())
+            .then((data) => setRecentMovies(shuffleMovies(data)))
+            .catch((error) => console.error('Failed to load recent movies:', error)),
+          tvApi
+            .getOnTheAir(stablePage())
+            .then((data) => setRecentTv(shuffleMovies(data)))
+            .catch((error) => console.error('Failed to load on-the-air TV:', error)),
+          tvApi
+            .getPopular(stablePage())
+            .then((data) => setTvSeriesForYou(shuffleMovies(data)))
+            .catch((error) => console.error('Failed to load TV series for you:', error)),
+          moviesApi
+            .getByOriginCountry('US', stablePage())
+            .then((data) => setHollywoodMovies(shuffleMovies(data)))
+            .catch((error) => console.error('Failed to load Hollywood movies:', error)),
+          moviesApi
+            .getByOriginCountry('IN', stablePage())
+            .then((data) => setBollywoodMovies(shuffleMovies(data)))
+            .catch((error) => console.error('Failed to load Bollywood movies:', error)),
+          moviesApi
+            .getByOriginCountry('NG', stablePage())
+            .then((data) => setNollywoodMovies(shuffleMovies(data)))
+            .catch((error) => console.error('Failed to load Nollywood movies:', error)),
+          moviesApi
+            .getByOriginCountry('KR', stablePage())
+            .then((data) => setKoreanMovies(shuffleMovies(data)))
+            .catch((error) => console.error('Failed to load Korean movies:', error)),
+          moviesApi
+            .getByOriginCountry('JP', stablePage())
+            .then((data) => setJapaneseMovies(shuffleMovies(data)))
+            .catch((error) => console.error('Failed to load Japanese movies:', error)),
+          moviesApi
+            .getByOriginCountry('CN', stablePage())
+            .then((data) => setChineseMovies(shuffleMovies(data)))
+            .catch((error) => console.error('Failed to load Chinese movies:', error)),
+          moviesApi
+            .getByOriginCountry('JP', stablePage(), 16)
+            .then((data) => setAnimeMovies(shuffleMovies(data)))
+            .catch((error) => console.error('Failed to load anime movies:', error)),
+        ];
 
-        setActionMovies(action);
-        setComedyMovies(comedy);
-        setDramaMovies(drama);
-        setRecentMovies(recent);
-        setHollywoodMovies(hollywood);
-        setBollywoodMovies(bollywood);
-        setNollywoodMovies(nollywood);
-        setKoreanMovies(korean);
-        setJapaneseMovies(japanese);
-        setChineseMovies(chinese);
-        setAnimeMovies(anime);
+        await Promise.allSettled(tasks);
       } catch (error) {
         console.error('Failed to load extra rows:', error);
       } finally {
@@ -103,6 +136,19 @@ const Home: React.FC = () => {
       loadExtras();
     }
   }, [genres, genresLoading]);
+
+  useEffect(() => {
+    const loadTrendingTv = async () => {
+      try {
+        const data = await tvApi.getTrending('week', stablePage());
+        setTrendingTv(data);
+      } catch (error) {
+        console.error('Failed to fetch trending TV:', error);
+      }
+    };
+
+    loadTrendingTv();
+  }, []);
 
   useEffect(() => {
     const loadContinueWatching = async () => {
@@ -129,6 +175,66 @@ const Home: React.FC = () => {
     );
   }, [genres]);
 
+  const shuffledTrending = useMemo(() => shuffleMovies(trending), [trending]);
+  const shuffledPopular = useMemo(() => shuffleMovies(popular), [popular]);
+  const shuffledTopRated = useMemo(() => shuffleMovies(topRated), [topRated]);
+
+  const combinedTrending = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const movies = shuffledTrending.map((item) => ({ ...item, media_type: 'movie' as const }));
+    const shows = trendingTv.map((item) => ({ ...item, media_type: 'tv' as const }));
+    const merged = [...movies, ...shows].filter((item) => {
+      const dateValue =
+        item.release_date || (item as { first_air_date?: string }).first_air_date;
+      if (!dateValue) return false;
+      const year = new Date(dateValue).getFullYear();
+      return year === currentYear;
+    });
+    merged.sort((a, b) => {
+      const aDateValue =
+        a.release_date || (a as { first_air_date?: string }).first_air_date;
+      const bDateValue =
+        b.release_date || (b as { first_air_date?: string }).first_air_date;
+      const aDate = aDateValue ? new Date(aDateValue).getTime() : 0;
+      const bDate = bDateValue ? new Date(bDateValue).getTime() : 0;
+      return bDate - aDate;
+    });
+    const hollywood = hollywoodMovies
+      .map((item) => ({ ...item, media_type: 'movie' as const }))
+      .filter((item) => {
+        if (!item.release_date) return false;
+        return new Date(item.release_date).getFullYear() === currentYear;
+      })
+      .sort((a, b) => {
+        const aDate = a.release_date ? new Date(a.release_date).getTime() : 0;
+        const bDate = b.release_date ? new Date(b.release_date).getTime() : 0;
+        return bDate - aDate;
+      });
+
+    const seen = new Set<string>();
+    const addUnique = (items: MovieListItem[]) =>
+      items.filter((item) => {
+        const key = `${item.media_type || 'movie'}-${item.id}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+    return [...addUnique(hollywood), ...addUnique(merged)];
+  }, [shuffledTrending, trendingTv, hollywoodMovies]);
+
+  const combinedLatest = useMemo(() => {
+    const movies = recentMovies.map((item) => ({ ...item, media_type: 'movie' as const }));
+    const shows = recentTv.map((item) => ({ ...item, media_type: 'tv' as const }));
+    const merged = [...movies, ...shows];
+    merged.sort((a, b) => {
+      const aDate = a.release_date ? new Date(a.release_date).getTime() : 0;
+      const bDate = b.release_date ? new Date(b.release_date).getTime() : 0;
+      return bDate - aDate;
+    });
+    return merged;
+  }, [recentMovies, recentTv]);
+
   const continueWatchingMovies = continueWatching.map((item) => item.movie);
 
   return (
@@ -144,7 +250,7 @@ const Home: React.FC = () => {
       <div className="min-h-screen bg-dark-950">
         <Hero />
 
-        <div className="relative z-10 -mt-8 sm:-mt-24 lg:-mt-32 pb-12">
+        <div className="relative z-10 mt-0 pb-12">
           {isAuthenticated && continueWatchingMovies.length > 0 && (
             <MovieRow
               title="Continue Watching"
@@ -155,85 +261,92 @@ const Home: React.FC = () => {
 
           <MovieRow
             title="Trending Now"
-            movies={trending}
-            loading={trendingLoading}
+            movies={combinedTrending}
+            loading={trendingLoading && trendingTv.length === 0}
             genreMap={genreMap}
+          />
+          <MovieRow
+            title="TV Series for you"
+            movies={tvSeriesForYou}
+            loading={loadingExtras && tvSeriesForYou.length === 0}
+            genreMap={genreMap}
+            mediaType="tv"
           />
           <MovieRow
             title="Hollywood Movies"
             movies={hollywoodMovies}
-            loading={loadingExtras}
+            loading={loadingExtras && hollywoodMovies.length === 0}
             genreMap={genreMap}
           />
           <MovieRow
             title="Bollywood Movies"
             movies={bollywoodMovies}
-            loading={loadingExtras}
+            loading={loadingExtras && bollywoodMovies.length === 0}
             genreMap={genreMap}
           />
           <MovieRow
             title="Nollywood Movies"
             movies={nollywoodMovies}
-            loading={loadingExtras}
+            loading={loadingExtras && nollywoodMovies.length === 0}
             genreMap={genreMap}
           />
           <MovieRow
             title="Korean Movies"
             movies={koreanMovies}
-            loading={loadingExtras}
+            loading={loadingExtras && koreanMovies.length === 0}
             genreMap={genreMap}
           />
           <MovieRow
             title="Japanese Movies"
             movies={japaneseMovies}
-            loading={loadingExtras}
+            loading={loadingExtras && japaneseMovies.length === 0}
             genreMap={genreMap}
           />
           <MovieRow
             title="Chinese Movies"
             movies={chineseMovies}
-            loading={loadingExtras}
+            loading={loadingExtras && chineseMovies.length === 0}
             genreMap={genreMap}
           />
           <MovieRow
             title="Anime / Animation"
             movies={animeMovies}
-            loading={loadingExtras}
+            loading={loadingExtras && animeMovies.length === 0}
             genreMap={genreMap}
           />
           <MovieRow
             title="Action Movies"
             movies={actionMovies}
-            loading={loadingExtras}
+            loading={loadingExtras && actionMovies.length === 0}
             genreMap={genreMap}
           />
           <MovieRow
             title="Comedy"
             movies={comedyMovies}
-            loading={loadingExtras}
+            loading={loadingExtras && comedyMovies.length === 0}
             genreMap={genreMap}
           />
           <MovieRow
             title="Drama Movies"
             movies={dramaMovies}
-            loading={loadingExtras}
+            loading={loadingExtras && dramaMovies.length === 0}
             genreMap={genreMap}
           />
           <MovieRow
-            title="Recently Added"
-            movies={recentMovies}
-            loading={loadingExtras}
+            title="Latest Releases"
+            movies={combinedLatest}
+            loading={loadingExtras && combinedLatest.length === 0}
             genreMap={genreMap}
           />
           <MovieRow
             title="Popular on NebulaStream"
-            movies={popular}
+            movies={shuffledPopular}
             loading={popularLoading}
             genreMap={genreMap}
           />
           <MovieRow
             title="Top Rated"
-            movies={topRated}
+            movies={shuffledTopRated}
             loading={topRatedLoading}
             genreMap={genreMap}
           />

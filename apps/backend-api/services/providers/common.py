@@ -5,8 +5,8 @@ Shared helpers for stream provider scraping.
 from __future__ import annotations
 
 import re
-from typing import List, Optional, Set
-from urllib.parse import urljoin
+from typing import List, Optional, Set, Dict
+from urllib.parse import urljoin, urlparse
 
 import httpx
 from bs4 import BeautifulSoup
@@ -86,6 +86,14 @@ def stream_type_from_url(url: str) -> str:
     return "hls" if ".m3u8" in url.lower() else "direct"
 
 
+def build_referer_headers(referer: str) -> Dict[str, str]:
+    headers = {"Referer": referer}
+    parsed = urlparse(referer)
+    if parsed.scheme and parsed.hostname:
+        headers["Origin"] = f"{parsed.scheme}://{parsed.hostname}"
+    return headers
+
+
 async def fetch_html(
     url: str,
     client: httpx.AsyncClient,
@@ -126,6 +134,7 @@ async def scrape_provider_streams(
         if iframe_html:
             media_urls.update(extract_media_urls(iframe_html, iframe_url))
 
+    headers = build_referer_headers(embed_url)
     streams: List[StreamSource] = []
     for media_url in media_urls:
         streams.append(
@@ -135,6 +144,7 @@ async def scrape_provider_streams(
                 stream_type=stream_type_from_url(media_url),
                 language="en",
                 subtitles=[],
+                headers=headers,
                 provider_name=provider_name,
                 reliability_score=reliability_score,
             )

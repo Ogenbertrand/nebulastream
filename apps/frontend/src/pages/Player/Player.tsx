@@ -1,23 +1,48 @@
 import React, { useEffect, useState, useCallback, useRef, Suspense } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
 import Loading from '../../components/Loading/Loading';
-import { moviesApi, streamsApi, watchHistoryApi } from '../../services/api';
-import { Movie, StreamSource } from '../../types';
+import { moviesApi, streamsApi, tvApi, watchHistoryApi } from '../../services/api';
+import { Episode, Movie, StreamResponse, StreamSource } from '../../types';
 import toast from 'react-hot-toast';
+import IntroScreen from '../../components/Intro/IntroScreen';
+import { introConfig } from '../../config/introConfig';
 
 const VideoPlayer = React.lazy(() => import('../../components/VideoPlayer/VideoPlayer'));
 
 const Player: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const searchParams = new URLSearchParams(location.search);
+  const isTv = location.pathname.includes('/watch/tv');
+  const seasonParam = Number(searchParams.get('season') || 1);
+  const episodeParam = Number(searchParams.get('episode') || 1);
+  const seasonNumber = Number.isFinite(seasonParam) && seasonParam > 0 ? seasonParam : 1;
+  const episodeNumber = Number.isFinite(episodeParam) && episodeParam > 0 ? episodeParam : 1;
 
   const [movie, setMovie] = useState<Movie | null>(null);
   const [sources, setSources] = useState<StreamSource[]>([]);
   const [loading, setLoading] = useState(true);
   const [initialProgress, setInitialProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [episode, setEpisode] = useState<Episode | null>(null);
+  const [playbackState, setPlaybackState] = useState<'idle' | 'intro' | 'loading' | 'playing'>(
+    'idle'
+  );
+  const internalSeedRef = useRef<{
+    sourceUrl: string;
+    quality: string;
+    language: string;
+    subtitles: StreamSource['subtitles'];
+    isTv?: boolean;
+    season?: number;
+    episode?: number;
+  } | null>(null);
+  const internalRefreshRef = useRef(false);
+  const lastInternalRefreshRef = useRef(0);
 
   // Progress tracking
   const progressRef = React.useRef({ progress: 0, duration: 0 });
@@ -29,7 +54,7 @@ const Player: React.FC = () => {
   }, [movie]);
 
   const saveProgress = useCallback(async () => {
-    if (!id || !movieRef.current) return;
+    if (!id || !movieRef.current || isTv) return;
 
     const { progress, duration } = progressRef.current;
     if (duration === 0) return;
@@ -47,35 +72,150 @@ const Player: React.FC = () => {
     } catch (error) {
       console.error('Failed to save progress:', error);
     }
-  }, [id]);
+  }, [id, isTv]);
 
   const loadPlayerData = useCallback(
-    async (movieId: number) => {
+    async (contentId: number) => {
       try {
         setLoading(true);
+        setPlaybackState('loading');
         setError(null);
+        setEpisode(null);
+        internalSeedRef.current = null;
+        setInitialProgress(0);
 
         // Fetch movie details and streams in parallel
-        const [movieData, streamData, historyData] = await Promise.all([
-          moviesApi.getDetail(movieId),
-          streamsApi.getStreams(movieId),
-          watchHistoryApi.getHistory(1, 1).catch(() => []),
-        ]);
-
-        setMovie(movieData);
-        setSources(streamData.sources);
-
-        // Find existing progress
-        const existingEntry = historyData.find((h) => h.movie_id === movieId);
-        if (existingEntry && !existingEntry.is_completed) {
-          setInitialProgress(existingEntry.progress_seconds);
+        const preferredQuality = '720p';
+        const movieData = isTv
+          ? await tvApi.getDetail(contentId)
+          : await moviesApi.getDetail(contentId);
+        const historyData = isTv ? [] : await watchHistoryApi.getHistory(1, 1).catch(() => []);
+        let streamData: StreamResponse;
+        try {
+          streamData = isTv
+            ? await streamsApi.getTvStreams(contentId, seasonNumber, episodeNumber, preferredQuality)
+            : await streamsApi.getStreams(contentId, preferredQuality);
+        } catch (streamError) {
+          console.warn('Failed to fetch streams:', streamError);
+          streamData = { movie_id: contentId, sources: [], subtitles: [] };
         }
 
-        // Start progress saving interval
+        setMovie(movieData);
+        if (isTv) {
+          try {
+            const episodes = await tvApi.getSeason(contentId, seasonNumber);
+            const selectedEpisode =
+              episodes?.find((item: Episode) => item.episode_number === episodeNumber) || null;
+            setEpisode(selectedEpisode);
+          } catch (episodeError) {
+            console.warn('Failed to fetch episode info:', episodeError);
+          }
+        }
+        let resolvedSources = streamData.sources;
+
+        const token = localStorage.getItem('access_token');
+        const hasInternalSource = resolvedSources.some(
+          (source) => source.provider_name === 'NebulaStream'
+        );
+        if (token && !hasInternalSource) {
+          try {
+            const hlsCandidates = resolvedSources.filter((source) => source.stream_type === 'hls');
+            const candidateSource =
+              hlsCandidates
+                .sort((a, b) => {
+                  const headerScore =
+                    Number(Boolean(b.headers && Object.keys(b.headers).length > 0)) -
+                    Number(Boolean(a.headers && Object.keys(a.headers).length > 0));
+                  if (headerScore !== 0) return headerScore;
+                  const reliability = (b.reliability_score || 0) - (a.reliability_score || 0);
+                  if (reliability !== 0) return reliability;
+                  const qualityOrder: Record<string, number> = {
+                    '4k': 4,
+                    '1080p': 3,
+                    '720p': 2,
+                    '480p': 1,
+                  };
+                  return (
+                    (qualityOrder[b.quality as keyof typeof qualityOrder] || 0) -
+                    (qualityOrder[a.quality as keyof typeof qualityOrder] || 0)
+                  );
+                })
+                .shift() || null;
+            if (!candidateSource) {
+              console.info('No HLS source available for internal session.');
+              internalSeedRef.current = null;
+            } else {
+              const session = isTv
+                ? await streamsApi.createTvSession(
+                    contentId,
+                    seasonNumber,
+                    episodeNumber,
+                    preferredQuality,
+                    'en',
+                    candidateSource.url,
+                    candidateSource.headers
+                  )
+                : await streamsApi.createSession(
+                    contentId,
+                    preferredQuality,
+                    'en',
+                    candidateSource.url,
+                    candidateSource.headers
+                  );
+              if (session?.ready) {
+                internalSeedRef.current = {
+                  sourceUrl: candidateSource.url,
+                  quality: preferredQuality,
+                  language: 'en',
+                  subtitles: candidateSource.subtitles || [],
+                  isTv,
+                  season: seasonNumber,
+                  episode: episodeNumber,
+                };
+                const internalSource: StreamSource = {
+                  url: session.manifest_url,
+                  quality: preferredQuality,
+                  stream_type: 'hls',
+                  language: 'en',
+                  subtitles: candidateSource.subtitles || [],
+                  provider_name: 'NebulaStream',
+                  reliability_score: 95,
+                };
+                resolvedSources = [
+                  internalSource,
+                  ...resolvedSources.filter((source) => source.url !== internalSource.url),
+                ];
+              }
+            }
+          } catch (sessionError) {
+            console.warn('Failed to create internal session:', sessionError);
+            internalSeedRef.current = null;
+          }
+        }
+
+        setSources(resolvedSources);
+
+        if (introConfig.enableIntro) {
+          setPlaybackState('intro');
+        } else {
+          setPlaybackState('loading');
+        }
+
+        // Find existing progress
+        if (!isTv) {
+          const existingEntry = historyData.find((h) => h.movie_id === contentId);
+          if (existingEntry && !existingEntry.is_completed) {
+            setInitialProgress(existingEntry.progress_seconds);
+          }
+        }
+
+        // Start progress saving interval for movies only
         if (saveIntervalRef.current) {
           clearInterval(saveIntervalRef.current);
         }
-        saveIntervalRef.current = setInterval(saveProgress, 30000); // Save every 30 seconds
+        if (!isTv) {
+          saveIntervalRef.current = setInterval(saveProgress, 30000); // Save every 30 seconds
+        }
       } catch (err) {
         console.error('Failed to load player data:', err);
         setError('Failed to load video. Please try again.');
@@ -83,8 +223,65 @@ const Player: React.FC = () => {
         setLoading(false);
       }
     },
-    [saveProgress]
+    [episodeNumber, isTv, saveProgress, seasonNumber]
   );
+
+  const refreshInternalSession = useCallback(async (): Promise<StreamSource | null> => {
+    if (!id || internalRefreshRef.current) {
+      return null;
+    }
+    const seed = internalSeedRef.current;
+    const token = localStorage.getItem('access_token');
+    if (!seed || !token) {
+      return null;
+    }
+    const now = Date.now();
+    if (now - lastInternalRefreshRef.current < 5000) {
+      return null;
+    }
+
+    internalRefreshRef.current = true;
+    try {
+      const session =
+        seed.isTv && seed.season && seed.episode
+          ? await streamsApi.createTvSession(
+              parseInt(id),
+              seed.season,
+              seed.episode,
+              seed.quality,
+              seed.language,
+              seed.sourceUrl
+            )
+          : await streamsApi.createSession(
+              parseInt(id),
+              seed.quality,
+              seed.language,
+              seed.sourceUrl
+            );
+      if (session?.ready) {
+        const internalSource: StreamSource = {
+          url: session.manifest_url,
+          quality: seed.quality,
+          stream_type: 'hls',
+          language: seed.language,
+          subtitles: seed.subtitles || [],
+          provider_name: 'NebulaStream',
+          reliability_score: 95,
+        };
+        setSources((prev) => {
+          const filtered = prev.filter((source) => source.provider_name !== 'NebulaStream');
+          return [internalSource, ...filtered];
+        });
+        lastInternalRefreshRef.current = now;
+        return internalSource;
+      }
+    } catch (error) {
+      console.warn('Failed to refresh internal session:', error);
+    } finally {
+      internalRefreshRef.current = false;
+    }
+    return null;
+  }, [id]);
 
   useEffect(() => {
     if (id) {
@@ -93,19 +290,21 @@ const Player: React.FC = () => {
 
     return () => {
       // Save progress on unmount
-      saveProgress();
+      if (!isTv) {
+        saveProgress();
+      }
       if (saveIntervalRef.current) {
         clearInterval(saveIntervalRef.current);
       }
     };
-  }, [id, loadPlayerData, saveProgress]);
+  }, [id, isTv, loadPlayerData, saveProgress]);
 
   const handleProgress = (progress: number, duration: number) => {
     progressRef.current = { progress, duration };
   };
 
   const handleEnded = async () => {
-    if (!id) return;
+    if (!id || isTv) return;
 
     // Mark as completed
     try {
@@ -147,7 +346,7 @@ const Player: React.FC = () => {
           <AlertCircle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-white mb-4">No Streams Available</h1>
           <p className="text-gray-400 mb-6">
-            We couldn't find any streaming sources for this movie.
+            We couldn't find any streaming sources for this {isTv ? 'episode' : 'movie'}.
           </p>
           <button onClick={() => navigate(-1)} className="btn-primary">
             Go Back
@@ -160,8 +359,22 @@ const Player: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>{movie ? `Watching ${movie.title}` : 'Now Playing'} - NebulaStream</title>
+        <title>
+          {movie
+            ? `Watching ${movie.title}${isTv ? ` • S${seasonNumber}E${episodeNumber}` : ''}`
+            : 'Now Playing'}{' '}
+          - NebulaStream
+        </title>
       </Helmet>
+
+      {playbackState === 'intro' && (
+        <IntroScreen
+          durationMs={introConfig.introDuration}
+          soundEnabled={introConfig.soundEnabled}
+          soundUrl={introConfig.soundUrl}
+          onComplete={() => setPlaybackState('loading')}
+        />
+      )}
 
       <div className="min-h-screen bg-dark-950 relative overflow-hidden">
         {movie?.backdrop_path && (
@@ -190,10 +403,14 @@ const Player: React.FC = () => {
             <div className="w-full max-w-6xl 2xl:max-w-screen-2xl mx-auto">
               <Suspense fallback={<Loading message="Loading player..." />}>
                 <VideoPlayer
+                  key={`${id}-${isTv ? `tv-${seasonNumber}-${episodeNumber}` : 'movie'}`}
                   sources={sources}
                   initialProgress={initialProgress}
                   onProgress={handleProgress}
                   onEnded={handleEnded}
+                  onInternalError={refreshInternalSession}
+                  autoPlay={playbackState !== 'intro'}
+                  onPlaybackStarted={() => setPlaybackState('playing')}
                   posterUrl={movie?.poster_path}
                   backdropUrl={movie?.backdrop_path}
                 />
@@ -206,10 +423,21 @@ const Player: React.FC = () => {
               <div className="max-w-6xl 2xl:max-w-screen-2xl mx-auto">
                 <h1 className="text-lg sm:text-2xl font-display font-bold text-white">
                   {movie.title}
+                  {isTv && (
+                    <span className="text-white/60 text-sm sm:text-lg font-normal ml-2">
+                      S{seasonNumber}E{episodeNumber}
+                      {episode?.name ? ` · ${episode.name}` : ''}
+                    </span>
+                  )}
                 </h1>
-                {movie.overview && (
+                {!isTv && movie.overview && (
                   <p className="text-white/60 mt-2 line-clamp-2 max-w-2xl text-sm sm:text-base">
                     {movie.overview}
+                  </p>
+                )}
+                {isTv && episode?.overview && (
+                  <p className="text-white/60 mt-2 line-clamp-2 max-w-2xl text-sm sm:text-base">
+                    {episode.overview}
                   </p>
                 )}
               </div>

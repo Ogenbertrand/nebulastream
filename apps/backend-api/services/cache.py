@@ -23,6 +23,9 @@ class CacheService:
         if not prefix:
             return key
         return f"{prefix}:{key}"
+
+    def _stale_key(self, key: str) -> str:
+        return self._format_key(f"stale:{key}")
     
     async def connect(self):
         """Connect to Redis"""
@@ -69,6 +72,23 @@ class CacheService:
         except Exception as e:
             logger.warning("Cache get error", key=key, error=str(e))
             return None
+
+    async def get_stale(self, key: str) -> Optional[Any]:
+        """Get stale value from cache (longer TTL fallback)"""
+        if not self._redis:
+            return None
+
+        try:
+            value = await self._redis.get(self._stale_key(key))
+            if value:
+                return json.loads(value)
+            return None
+        except json.JSONDecodeError as e:
+            logger.warning("Cache stale decode error", key=key, error=str(e))
+            return None
+        except Exception as e:
+            logger.warning("Cache stale get error", key=key, error=str(e))
+            return None
     
     async def set(self, key: str, value: Any, ttl: int = 3600) -> bool:
         """Set value in cache"""
@@ -82,6 +102,22 @@ class CacheService:
             return True
         except Exception as e:
             logger.warning("Cache set error", key=key, error=str(e))
+            return False
+
+    async def set_with_stale(self, key: str, value: Any, ttl: int = 3600, stale_ttl: int | None = None) -> bool:
+        """Set value in cache and keep a longer-lived stale fallback."""
+        if not self._redis:
+            return False
+
+        try:
+            payload = jsonable_encoder(value)
+            serialized = json.dumps(payload)
+            await self._redis.setex(self._format_key(key), ttl, serialized)
+            ttl_stale = stale_ttl or max(ttl * 6, 24 * 60 * 60)
+            await self._redis.setex(self._stale_key(key), ttl_stale, serialized)
+            return True
+        except Exception as e:
+            logger.warning("Cache set stale error", key=key, error=str(e))
             return False
     
     async def delete(self, key: str) -> bool:

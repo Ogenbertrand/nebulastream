@@ -12,22 +12,38 @@ import {
   SkipForward,
   Loader2,
 } from 'lucide-react';
-import { StreamSource, Subtitle } from '../../types';
+import { StreamSource } from '../../types';
+import Wordmark from '../Brand/Wordmark';
 
 interface VideoPlayerProps {
   sources: StreamSource[];
   initialProgress?: number;
   onProgress?: (progress: number, duration: number) => void;
   onEnded?: () => void;
+  onInternalError?: () => Promise<StreamSource | null> | StreamSource | null;
+  autoPlay?: boolean;
+  onPlaybackStarted?: () => void;
   posterUrl?: string;
   backdropUrl?: string;
 }
+
+type SubtitleOption = {
+  id: string;
+  label: string;
+  lang?: string;
+  kind: 'external' | 'hls';
+  url?: string;
+  trackId?: number;
+};
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({
   sources,
   initialProgress = 0,
   onProgress,
   onEnded,
+  onInternalError,
+  autoPlay = true,
+  onPlaybackStarted,
   posterUrl,
   backdropUrl,
 }) => {
@@ -37,7 +53,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const progressBarRef = useRef<HTMLDivElement>(null);
   const hasSeekedInitial = useRef(false);
 
-  const [isPlaying, setIsPlaying] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [volume, setVolume] = useState(0.8);
   const [isMuted, setIsMuted] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -49,10 +65,19 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [isBuffering, setIsBuffering] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [selectedSubtitle, setSelectedSubtitle] = useState<Subtitle | null>(null);
+  const [selectedSubtitle, setSelectedSubtitle] = useState<SubtitleOption | null>(null);
+  const [hlsLevels, setHlsLevels] = useState<{ level: number; label: string; height?: number }[]>(
+    []
+  );
+  const [hlsCurrentLevel, setHlsCurrentLevel] = useState(-1);
+  const [hlsSubtitleTracks, setHlsSubtitleTracks] = useState<
+    { id: number; label: string; lang?: string }[]
+  >([]);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const [hoverLeft, setHoverLeft] = useState(0);
   const [playerError, setPlayerError] = useState<string | null>(null);
+  const internalRefreshRef = useRef(false);
+  const hasStartedRef = useRef(false);
 
   const sortedSources = useMemo(() => {
     if (!sources.length) return [];
@@ -71,16 +96,27 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
   // Prefer direct streams first
   useEffect(() => {
-    if (sortedSources.length > 0 && !selectedSource) {
+    if (sortedSources.length === 0) {
+      setSelectedSource(null);
+      return;
+    }
+    if (!selectedSource || !sortedSources.find((source) => source.url === selectedSource.url)) {
       setSelectedSource(sortedSources[0]);
     }
   }, [sortedSources, selectedSource]);
 
   useEffect(() => {
     setSelectedSubtitle(null);
+    setHlsLevels([]);
+    setHlsCurrentLevel(-1);
+    setHlsSubtitleTracks([]);
     setPlayerError(null);
     setIsBuffering(false);
     setIsInitializing(false);
+    hasStartedRef.current = false;
+    if (!autoPlay) {
+      setIsPlaying(false);
+    }
   }, [selectedSource?.url]);
 
   // Hide controls after inactivity
@@ -125,16 +161,46 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     setIsBuffering(false);
     setIsInitializing(false);
 
-    const currentIndex = sortedSources.findIndex((source) => source.url === selectedSource?.url);
-    const nextSource = currentIndex >= 0 ? sortedSources[currentIndex + 1] : null;
+    const applyFallback = () => {
+      const currentIndex = sortedSources.findIndex((source) => source.url === selectedSource?.url);
+      const isInternal = selectedSource?.provider_name === 'NebulaStream';
+      const candidates = currentIndex >= 0 ? sortedSources.slice(currentIndex + 1) : [];
+      const nextSource = candidates.find((source) => {
+        if (isInternal && source.stream_type === 'embed') {
+          return false;
+        }
+        return true;
+      });
 
-    if (nextSource) {
-      setSelectedSource(nextSource);
+      if (nextSource) {
+        setSelectedSource(nextSource);
+        return;
+      }
+
+      setPlayerError('This stream could not be played. Try another source.');
+    };
+
+    const isInternal = selectedSource?.provider_name === 'NebulaStream';
+    if (isInternal && onInternalError && !internalRefreshRef.current) {
+      internalRefreshRef.current = true;
+      Promise.resolve(onInternalError())
+        .then((newSource) => {
+          internalRefreshRef.current = false;
+          if (newSource) {
+            setSelectedSource(newSource);
+            return;
+          }
+          applyFallback();
+        })
+        .catch(() => {
+          internalRefreshRef.current = false;
+          applyFallback();
+        });
       return;
     }
 
-    setPlayerError('This stream could not be played. Try another source.');
-  }, [sortedSources, selectedSource]);
+    applyFallback();
+  }, [sortedSources, selectedSource, onInternalError]);
 
   // Initialize stream playback when source changes
   useEffect(() => {
@@ -165,6 +231,38 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           }
         });
 
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          const levelMap = new Map<number, { level: number; label: string; height?: number }>();
+          hls.levels.forEach((level, index) => {
+            const height = level.height || 0;
+            const label = height ? `${height}p` : level.name || `Level ${index + 1}`;
+            const key = height || index + 1000;
+            if (!levelMap.has(key)) {
+              levelMap.set(key, { level: index, label, height });
+            }
+          });
+          const options = Array.from(levelMap.values()).sort(
+            (a, b) => (b.height || 0) - (a.height || 0)
+          );
+          setHlsLevels(options);
+          setHlsCurrentLevel(hls.currentLevel);
+        });
+
+        hls.on(Hls.Events.LEVEL_SWITCHED, (_, data) => {
+          setHlsCurrentLevel(data.level);
+        });
+
+        hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, (_, data) => {
+          const tracks = data.subtitleTracks || hls.subtitleTracks || [];
+          setHlsSubtitleTracks(
+            tracks.map((track, index) => ({
+              id: index,
+              label: track.name || track.lang || `Subtitle ${index + 1}`,
+              lang: track.lang,
+            }))
+          );
+        });
+
         hls.attachMedia(video);
         hls.on(Hls.Events.MEDIA_ATTACHED, () => {
           hls.loadSource(selectedSource.url);
@@ -182,7 +280,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     video.preload = 'metadata';
     video.load();
 
-    if (isPlaying) {
+    if (isPlaying && autoPlay) {
       video.play().catch(() => {
         setIsPlaying(false);
       });
@@ -194,7 +292,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         hlsRef.current = null;
       }
     };
-  }, [selectedSource, isEmbedSource, isHlsSource, isPlaying, handlePlayerError]);
+  }, [selectedSource, isEmbedSource, isHlsSource, isPlaying, autoPlay, handlePlayerError]);
 
   useEffect(() => {
     if (isEmbedSource) return;
@@ -204,6 +302,60 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     video.muted = isMuted;
     video.playbackRate = playbackRate;
   }, [isEmbedSource, isMuted, playbackRate, volume]);
+
+  useEffect(() => {
+    if (isEmbedSource) return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (!autoPlay) {
+      video.pause();
+      setIsPlaying(false);
+      return;
+    }
+
+    if (autoPlay && !isPlaying) {
+      video
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false));
+    }
+  }, [autoPlay, isEmbedSource, isPlaying]);
+
+  useEffect(() => {
+    if (isEmbedSource) return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    // Clear any previously injected external tracks
+    const existingTracks = video.querySelectorAll('track[data-nebula-subtitle]');
+    existingTracks.forEach((track) => track.remove());
+
+    if (selectedSubtitle?.kind === 'hls') {
+      if (hlsRef.current) {
+        hlsRef.current.subtitleTrack = selectedSubtitle.trackId ?? -1;
+      }
+      return;
+    }
+
+    if (hlsRef.current) {
+      hlsRef.current.subtitleTrack = -1;
+    }
+
+    if (selectedSubtitle?.kind === 'external' && selectedSubtitle.url) {
+      const track = document.createElement('track');
+      track.setAttribute('data-nebula-subtitle', 'true');
+      track.kind = 'subtitles';
+      track.label = selectedSubtitle.label;
+      track.srclang = selectedSubtitle.lang || 'en';
+      track.src = selectedSubtitle.url;
+      track.default = true;
+      video.appendChild(track);
+      if (track.track) {
+        track.track.mode = 'showing';
+      }
+    }
+  }, [selectedSubtitle, isEmbedSource]);
 
   const handlePlayPause = () => {
     if (isEmbedSource) return;
@@ -295,8 +447,75 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   const progressPercent = duration > 0 ? (progress / duration) * 100 : 0;
-  const availableSubtitles = useMemo(() => selectedSource?.subtitles || [], [selectedSource]);
+  const availableSubtitles: SubtitleOption[] = useMemo(() => {
+    if (hlsSubtitleTracks.length > 0) {
+      return hlsSubtitleTracks.map((track) => ({
+        id: `hls-${track.id}`,
+        label: track.label,
+        lang: track.lang,
+        kind: 'hls',
+        trackId: track.id,
+      }));
+    }
+    const external = selectedSource?.subtitles || [];
+    return external.map((subtitle) => ({
+      id: `ext-${subtitle.url}`,
+      label: subtitle.label || subtitle.lang,
+      lang: subtitle.lang,
+      kind: 'external',
+      url: subtitle.url,
+    }));
+  }, [hlsSubtitleTracks, selectedSource]);
+  const sourceQualityOptions = useMemo(() => {
+    if (!selectedSource) return [];
+    const sameType = sortedSources.filter(
+      (source) => source.stream_type === selectedSource.stream_type
+    );
+    const seen = new Set<string>();
+    return sameType.filter((source) => {
+      if (seen.has(source.quality)) return false;
+      seen.add(source.quality);
+      return true;
+    });
+  }, [sortedSources, selectedSource]);
+  const qualityOptions = useMemo(() => {
+    if (isHlsSource && hlsLevels.length > 0) {
+      return [
+        { value: 'auto', label: 'Auto' },
+        ...hlsLevels.map((level) => ({
+          value: `hls-${level.level}`,
+          label: level.label,
+        })),
+      ];
+    }
+    if (sourceQualityOptions.length > 1) {
+      return sourceQualityOptions.map((source) => ({
+        value: source.quality,
+        label: source.quality,
+      }));
+    }
+    return [];
+  }, [isHlsSource, hlsLevels, sourceQualityOptions]);
+  const currentQualityValue = useMemo(() => {
+    if (isHlsSource && hlsLevels.length > 0) {
+      return hlsCurrentLevel === -1 ? 'auto' : `hls-${hlsCurrentLevel}`;
+    }
+    return selectedSource?.quality || '';
+  }, [isHlsSource, hlsLevels.length, hlsCurrentLevel, selectedSource?.quality]);
   const previewImage = backdropUrl || posterUrl;
+
+  const handleQualityChange = (value: string) => {
+    if (isHlsSource && hlsRef.current && hlsLevels.length > 0) {
+      const level = value === 'auto' ? -1 : parseInt(value.replace('hls-', ''), 10);
+      hlsRef.current.currentLevel = level;
+      setHlsCurrentLevel(level);
+      return;
+    }
+    const nextSource = sourceQualityOptions.find((source) => source.quality === value);
+    if (nextSource) {
+      setSelectedSource(nextSource);
+    }
+  };
 
   const handleProgressHover = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!progressBarRef.current || duration === 0) return;
@@ -358,7 +577,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
             setIsBuffering(false);
             setIsInitializing(false);
           }}
-          onPlaying={() => setIsBuffering(false)}
+          onPlaying={() => {
+            setIsBuffering(false);
+            if (!hasStartedRef.current) {
+              hasStartedRef.current = true;
+              onPlaybackStarted?.();
+            }
+          }}
           onEnded={onEnded}
           onError={handlePlayerError}
           playsInline
@@ -373,21 +598,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         >
           <div className="absolute top-0 left-0 right-0 p-3 sm:p-4 flex justify-between items-start">
             <div className="flex items-center gap-3">
-              <span className="px-3 py-1 rounded-full bg-black/50 text-xs uppercase tracking-[0.3em] text-white/70">
-                {selectedSource.quality} • {selectedSource.provider_name}
-              </span>
-              {availableSubtitles.length > 0 && (
-                <span className="px-3 py-1 rounded-full bg-white/10 text-xs text-white/70">
-                  Subtitles
-                </span>
-              )}
+              <div className="px-3 py-1 rounded-full bg-black/50">
+                <Wordmark size="sm" className="tracking-[0.24em]" />
+              </div>
             </div>
-            <button
-              onClick={toggleSettings}
-              className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition"
-            >
-              <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-            </button>
           </div>
 
           <div className="absolute inset-0 flex items-center justify-center">
@@ -502,17 +716,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {isEmbedSource && (
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-3 sm:top-4 left-3 sm:left-4 flex items-center gap-2">
-            <span className="px-3 py-1 rounded-full bg-black/60 text-xs uppercase tracking-[0.3em] text-white/70">
-              {selectedSource.quality} • {selectedSource.provider_name}
-            </span>
+            <div className="px-3 py-1 rounded-full bg-black/60">
+              <Wordmark size="sm" className="tracking-[0.24em]" />
+            </div>
           </div>
           <div className="absolute top-3 sm:top-4 right-3 sm:right-4 flex items-center gap-2 pointer-events-auto">
-            <button
-              onClick={toggleSettings}
-              className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition"
-            >
-              <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-            </button>
             <a
               href={selectedSource.url}
               target="_blank"
@@ -532,6 +740,23 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {showSettings && (
         <div className="absolute bottom-20 sm:bottom-24 right-4 sm:right-6 glass-panel rounded-2xl p-4 w-52 sm:w-60">
           <div className="space-y-4 text-sm text-white/80">
+            {qualityOptions.length > 0 && (
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-white/40 mb-2">Quality</p>
+                <select
+                  value={currentQualityValue}
+                  onChange={(e) => handleQualityChange(e.target.value)}
+                  className="w-full bg-dark-900/80 text-white rounded-lg px-3 py-2 border border-white/10"
+                >
+                  {qualityOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {sortedSources.length > 1 && (
               <div>
                 <p className="text-xs uppercase tracking-[0.3em] text-white/40 mb-2">Source</p>
@@ -557,13 +782,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 <div>
                   <p className="text-xs uppercase tracking-[0.3em] text-white/40 mb-2">Subtitles</p>
                   <select
-                    value={selectedSubtitle?.url || 'off'}
+                    value={selectedSubtitle?.id || 'off'}
                     onChange={(e) => {
                       const value = e.target.value;
                       if (value === 'off') {
                         setSelectedSubtitle(null);
                       } else {
-                        const subtitle = availableSubtitles.find((s) => s.url === value) || null;
+                        const subtitle = availableSubtitles.find((s) => s.id === value) || null;
                         setSelectedSubtitle(subtitle);
                       }
                     }}
@@ -571,8 +796,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   >
                     <option value="off">Off</option>
                     {availableSubtitles.map((subtitle) => (
-                      <option key={subtitle.url} value={subtitle.url}>
-                        {subtitle.label || subtitle.lang}
+                      <option key={subtitle.id} value={subtitle.id}>
+                        {subtitle.label}
                       </option>
                     ))}
                   </select>

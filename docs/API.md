@@ -280,6 +280,77 @@ Get streaming sources for a movie.
 }
 ```
 
+#### POST /streams/{movie_id}/session
+Create an internal playback session for the Rust streaming service.
+
+**Authentication:** Bearer token required.
+
+**Query Parameters:**
+- `preferred_quality` (string): `480p`, `720p`, `1080p`, or `4k` (default: `720p`)
+- `preferred_language` (string): Language code (default: `en`)
+- `source_url` (string, optional): Override upstream HLS manifest
+- `magnet_link` (string, optional): Future torrent ingestion input
+
+**Response:**
+```json
+{
+  "session_id": "7b7a5d8a-6a9f-4c78-9d2b-3c5ab7d8e4c1",
+  "manifest_url": "http://localhost:8090/v1/sessions/.../master.m3u8?token=...",
+  "status": "Ready",
+  "ready": true,
+  "expires_at": "2024-01-01T00:00:00Z"
+}
+```
+
+#### POST /streams/{movie_id}/ingest
+Start a torrent ingest job (scaffold) via the torrent-engine service.
+
+**Authentication:** Bearer token required.
+
+**Query Parameters:**
+- `magnet_link` (string, optional): Magnet link to ingest
+- `torrent_url` (string, optional): Direct .torrent URL to ingest
+- `quality` (string): `480p`, `720p`, `1080p`, or `4k` (default: `720p`)
+
+**Response:**
+```json
+{
+  "job_id": "a1b2c3d4",
+  "movie_id": 123,
+  "stream_id": "a1b2c3d4",
+  "stream_url": "http://localhost:8081/stream/a1b2c3d4",
+  "status_url": "http://localhost:8081/stream/a1b2c3d4/status",
+  "session_id": "7b7a5d8a-6a9f-4c78-9d2b-3c5ab7d8e4c1",
+  "manifest_url": "http://localhost:8090/v1/sessions/.../master.m3u8?token=...",
+  "ready": false,
+  "status": "preparing",
+  "created_at": "2024-01-01T00:00:00Z",
+  "updated_at": "2024-01-01T00:00:00Z"
+}
+```
+
+#### GET /streams/ingest/{job_id}
+Fetch ingest job status and refresh from torrent-engine.
+
+**Authentication:** Bearer token required.
+
+**Response:**
+```json
+{
+  "job_id": "a1b2c3d4",
+  "status": "streaming",
+  "progress": 12.5,
+  "download_speed": 123456,
+  "peers": 8,
+  "seeds": 20,
+  "ready": true,
+  "stream_url": "http://localhost:8081/stream/a1b2c3d4",
+  "session_id": "7b7a5d8a-6a9f-4c78-9d2b-3c5ab7d8e4c1",
+  "manifest_url": "http://localhost:8090/v1/sessions/.../master.m3u8?token=...",
+  "updated_at": "2024-01-01T00:00:00Z"
+}
+```
+
 ### Users
 
 #### GET /users/profile

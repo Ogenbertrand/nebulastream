@@ -43,6 +43,19 @@ USER_AGENTS = [
     ),
 ]
 
+PLAY_SELECTORS = [
+    "#pl_but",
+    "#pl_but_background",
+    ".plyr__control--overlaid",
+    ".jw-icon-play",
+    ".vjs-big-play-button",
+    ".big-play-button",
+    "button[aria-label='Play']",
+    "button[title='Play']",
+    ".play",
+    ".play-button",
+]
+
 PROVIDERS = [
     {
         "name": "vidsrc",
@@ -81,9 +94,57 @@ PROVIDERS = [
     },
 ]
 
+TV_PROVIDERS = [
+    {
+        "name": "vidsrc",
+        "display_name": "VidSrc",
+        "base_url": "https://vidsrc.me",
+        "embed_path": "/embed/tv/{tmdb_id}/{season}/{episode}",
+        "reliability": 80.0,
+    },
+    {
+        "name": "vidcloud",
+        "display_name": "VidCloud",
+        "base_url": "https://vidcloud1.com",
+        "embed_path": "/embed/tv/{tmdb_id}/{season}/{episode}",
+        "reliability": 75.0,
+    },
+    {
+        "name": "superembed",
+        "display_name": "SuperEmbed",
+        "base_url": "https://multiembed.mov",
+        "embed_path": "/?video_id={tmdb_id}&tmdb=1&s={season}&e={episode}",
+        "reliability": 70.0,
+    },
+    {
+        "name": "2embed",
+        "display_name": "2Embed",
+        "base_url": "https://2embed.org",
+        "embed_path": "/embed/tmdb/tv?id={tmdb_id}&s={season}&e={episode}",
+        "reliability": 65.0,
+    },
+    {
+        "name": "vidlink",
+        "display_name": "VidLink",
+        "base_url": "https://vidlink.pro",
+        "embed_path": "/tv/{tmdb_id}/{season}/{episode}",
+        "reliability": 60.0,
+    },
+]
 
-def _build_embed_url(provider: Dict[str, str], tmdb_id: int) -> str:
-    return f"{provider['base_url']}{provider['embed_path'].format(tmdb_id=tmdb_id)}"
+
+def _build_embed_url(
+    provider: Dict[str, str],
+    tmdb_id: int,
+    season: Optional[int] = None,
+    episode: Optional[int] = None,
+) -> str:
+    params = {"tmdb_id": tmdb_id}
+    if season is not None:
+        params["season"] = season
+    if episode is not None:
+        params["episode"] = episode
+    return f"{provider['base_url']}{provider['embed_path'].format(**params)}"
 
 
 def _is_media_url(url: str) -> bool:
@@ -124,10 +185,12 @@ async def _scrape_provider(
     browser,
     provider: Dict[str, str],
     tmdb_id: int,
+    season: Optional[int],
+    episode: Optional[int],
     semaphore: asyncio.Semaphore,
 ) -> List[StreamSource]:
     async with semaphore:
-        embed_url = _build_embed_url(provider, tmdb_id)
+        embed_url = _build_embed_url(provider, tmdb_id, season=season, episode=episode)
         user_agent = random.choice(USER_AGENTS)
         media_urls: Set[str] = set()
 
@@ -157,6 +220,33 @@ async def _scrape_provider(
 
         page.on("response", on_response)
 
+        async def _try_click(target_page) -> bool:
+            clicked = False
+            for selector in PLAY_SELECTORS:
+                try:
+                    locator = target_page.locator(selector).first
+                    if await locator.count():
+                        await locator.click(timeout=1500, force=True)
+                        clicked = True
+                        break
+                except Exception:
+                    continue
+            return clicked
+
+        async def _trigger_playback() -> None:
+            clicked = await _try_click(page)
+            if not clicked:
+                try:
+                    size = page.viewport_size or {"width": 1280, "height": 720}
+                    await page.mouse.click(size["width"] / 2, size["height"] / 2)
+                except Exception:
+                    pass
+            # Try clicking inside iframes too (some providers require it).
+            for frame in page.frames:
+                if frame == page.main_frame:
+                    continue
+                await _try_click(frame)
+
         try:
             await page.goto(
                 embed_url,
@@ -164,6 +254,9 @@ async def _scrape_provider(
                 timeout=settings.STREAM_SCRAPER_TIMEOUT_SECONDS * 1000,
             )
             await page.wait_for_timeout(settings.STREAM_SCRAPER_WAIT_MS)
+            if not media_urls:
+                await _trigger_playback()
+                await page.wait_for_timeout(settings.STREAM_SCRAPER_WAIT_MS)
         except PlaywrightTimeoutError:
             logger.warning("scraper.timeout", provider=provider["name"], url=embed_url)
         except Exception as exc:
@@ -224,7 +317,7 @@ async def scrape_streams(tmdb_id: int) -> List[StreamSource]:
         browser = await playwright.chromium.launch(headless=True)
         try:
             tasks = [
-                _scrape_provider(browser, provider, tmdb_id, semaphore)
+                _scrape_provider(browser, provider, tmdb_id, None, None, semaphore)
                 for provider in PROVIDERS
             ]
             provider_results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -242,5 +335,56 @@ async def scrape_streams(tmdb_id: int) -> List[StreamSource]:
         logger.info("scraper.complete", tmdb_id=tmdb_id, discovered=len(deduped))
     else:
         logger.info("scraper.empty", tmdb_id=tmdb_id)
+
+    return deduped
+
+
+async def scrape_tv_streams(tmdb_id: int, season: int, episode: int) -> List[StreamSource]:
+    if not settings.STREAM_SCRAPER_ENABLED:
+        return []
+
+    cache_key = f"stream:scraper:tv:{tmdb_id}:{season}:{episode}"
+    cached = await cache_service.get(cache_key)
+    if cached:
+        logger.info("scraper.cache_hit", tmdb_id=tmdb_id, season=season, episode=episode)
+        return cached
+
+    semaphore = asyncio.Semaphore(settings.STREAM_SCRAPER_MAX_CONCURRENCY)
+    results: List[StreamSource] = []
+
+    async with async_playwright() as playwright:
+        browser = await playwright.chromium.launch(headless=True)
+        try:
+            tasks = [
+                _scrape_provider(browser, provider, tmdb_id, season, episode, semaphore)
+                for provider in TV_PROVIDERS
+            ]
+            provider_results = await asyncio.gather(*tasks, return_exceptions=True)
+            for result in provider_results:
+                if isinstance(result, Exception):
+                    logger.warning(
+                        "scraper.provider_error",
+                        tmdb_id=tmdb_id,
+                        season=season,
+                        episode=episode,
+                        error=str(result),
+                    )
+                    continue
+                results.extend(result)
+        finally:
+            await browser.close()
+
+    deduped = _dedupe_streams(results)
+    if deduped:
+        await cache_service.set(cache_key, deduped, ttl=settings.STREAM_SCRAPER_CACHE_TTL)
+        logger.info(
+            "scraper.complete",
+            tmdb_id=tmdb_id,
+            season=season,
+            episode=episode,
+            discovered=len(deduped),
+        )
+    else:
+        logger.info("scraper.empty", tmdb_id=tmdb_id, season=season, episode=episode)
 
     return deduped

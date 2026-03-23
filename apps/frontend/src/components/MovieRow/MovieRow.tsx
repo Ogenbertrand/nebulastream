@@ -9,33 +9,40 @@ interface MovieRowProps {
   movies: MovieListItem[];
   loading?: boolean;
   genreMap?: Record<number, string>;
+  mediaType?: 'movie' | 'tv';
 }
 
-const MovieRow: React.FC<MovieRowProps> = ({ title, movies, loading = false, genreMap }) => {
+const MovieRow: React.FC<MovieRowProps> = ({
+  title,
+  movies,
+  loading = false,
+  genreMap,
+  mediaType,
+}) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
-  const [cardWidth, setCardWidth] = useState(160);
+  const [cardWidth, setCardWidth] = useState(150);
 
   useEffect(() => {
     const updateSizes = () => {
       const width = window.innerWidth;
       const nextCardWidth =
         width >= 2560
-          ? 320
+          ? 280
           : width >= 1920
-            ? 300
+            ? 240
             : width >= 1536
-              ? 260
+              ? 220
               : width >= 1280
-                ? 240
+                ? 200
                 : width >= 1024
-                  ? 216
+                  ? 176
                   : width >= 768
-                    ? 176
+                    ? 160
                     : width >= 640
-                      ? 156
-                      : 132;
+                      ? 144
+                      : 120;
       setCardWidth(nextCardWidth);
       setContainerWidth(scrollRef.current?.clientWidth || 0);
     };
@@ -67,21 +74,25 @@ const MovieRow: React.FC<MovieRowProps> = ({ title, movies, loading = false, gen
     }
   };
 
-  const gap = cardWidth >= 240 ? 18 : cardWidth >= 176 ? 14 : 6;
+  const gap = cardWidth >= 220 ? 14 : cardWidth >= 160 ? 10 : 6;
   const itemWidth = cardWidth + gap;
-  const totalWidth = movies.length * itemWidth;
+  const moviesWithImages = useMemo(
+    () => movies.filter((movie) => movie.poster_path || movie.backdrop_path),
+    [movies]
+  );
+  const totalWidth = moviesWithImages.length * itemWidth;
   const overscan = 3;
   const visibleCount = containerWidth
     ? Math.ceil(containerWidth / itemWidth) + overscan
-    : movies.length;
+    : moviesWithImages.length;
   const startIndex = Math.max(0, Math.floor(scrollLeft / itemWidth) - overscan);
-  const endIndex = Math.min(movies.length, startIndex + visibleCount + overscan);
+  const endIndex = Math.min(moviesWithImages.length, startIndex + visibleCount + overscan);
   const visibleMovies = useMemo(
-    () => movies.slice(startIndex, endIndex),
-    [movies, startIndex, endIndex]
+    () => moviesWithImages.slice(startIndex, endIndex),
+    [moviesWithImages, startIndex, endIndex]
   );
   // Posters in horizontal rows use a shorter aspect ratio (3/4) + compact caption.
-  const rowHeight = Math.round(cardWidth * 1.4 + 52);
+  const rowHeight = Math.round(cardWidth * 1.33 + 44);
 
   if (loading) {
     return (
@@ -99,7 +110,7 @@ const MovieRow: React.FC<MovieRowProps> = ({ title, movies, loading = false, gen
     );
   }
 
-  if (movies.length === 0) {
+  if (moviesWithImages.length === 0) {
     return null;
   }
 
@@ -108,7 +119,7 @@ const MovieRow: React.FC<MovieRowProps> = ({ title, movies, loading = false, gen
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
-      className="pt-1 pb-0 sm:pt-2 sm:pb-1 relative group"
+      className="pt-1 pb-0 sm:pt-1 sm:pb-0.5 relative group"
     >
       <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 2xl:px-10 mb-0.5 sm:mb-1">
         <h2 className="text-lg sm:text-xl lg:text-2xl 2xl:text-3xl font-semibold text-white tracking-wide">
@@ -120,16 +131,6 @@ const MovieRow: React.FC<MovieRowProps> = ({ title, movies, loading = false, gen
       </div>
 
       <div className="relative">
-        <div className="row-mask-left w-10 sm:w-14 lg:w-20 2xl:w-24" />
-        <div className="row-mask-right w-10 sm:w-14 lg:w-20 2xl:w-24" />
-
-        <button
-          onClick={() => scroll('left')}
-          className="absolute left-3 top-0 bottom-0 z-10 w-10 hidden sm:flex items-center justify-center rounded-full bg-white/10 text-white/70 hover:text-white hover:bg-white/20 transition opacity-0 group-hover:opacity-100"
-        >
-          <ChevronLeft className="w-5 h-5 2xl:w-6 2xl:h-6" />
-        </button>
-
         <div
           ref={scrollRef}
           className="overflow-x-auto hide-scrollbar px-3 sm:px-6 lg:px-8 2xl:px-10 pb-0"
@@ -146,7 +147,12 @@ const MovieRow: React.FC<MovieRowProps> = ({ title, movies, loading = false, gen
                     width: cardWidth,
                   }}
                 >
-                  <MovieCard movie={movie} genreMap={genreMap} variant="row" />
+                  <MovieCard
+                    movie={movie}
+                    genreMap={genreMap}
+                    variant="row"
+                    mediaType={mediaType}
+                  />
                 </div>
               );
             })}
@@ -154,10 +160,19 @@ const MovieRow: React.FC<MovieRowProps> = ({ title, movies, loading = false, gen
         </div>
 
         <button
-          onClick={() => scroll('right')}
-          className="absolute right-3 top-0 bottom-0 z-10 w-10 hidden sm:flex items-center justify-center rounded-full bg-white/10 text-white/70 hover:text-white hover:bg-white/20 transition opacity-0 group-hover:opacity-100"
+          onClick={() => scroll('left')}
+          className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 hidden sm:flex items-center justify-center rounded-full bg-black/60 border border-white/10 text-white/80 hover:text-white hover:bg-black/80 transition"
+          aria-label="Scroll left"
         >
-          <ChevronRight className="w-5 h-5 2xl:w-6 2xl:h-6" />
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+
+        <button
+          onClick={() => scroll('right')}
+          className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 hidden sm:flex items-center justify-center rounded-full bg-black/60 border border-white/10 text-white/80 hover:text-white hover:bg-black/80 transition"
+          aria-label="Scroll right"
+        >
+          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
     </motion.section>

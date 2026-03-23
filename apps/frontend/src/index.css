@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Poppins:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Poppins:wght@400;600;700;800&family=Bebas+Neue&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -144,6 +144,114 @@
 
   .player-container:hover .player-overlay {
     @apply opacity-100;
+  }
+
+  .intro-screen {
+    @apply fixed inset-0 z-[60] flex items-center justify-center bg-dark-950 overflow-hidden;
+    animation: introFade var(--intro-duration, 2800ms) ease-in-out forwards;
+  }
+
+  .intro-screen__logo {
+    @apply relative z-10;
+    animation: introScale var(--intro-duration, 2800ms) ease-in-out forwards;
+    filter: drop-shadow(0 12px 34px rgba(229, 9, 20, 0.45));
+  }
+
+  .intro-screen__glow {
+    @apply absolute inset-0;
+    background:
+      radial-gradient(50rem 20rem at 50% 45%, rgba(229, 9, 20, 0.35), transparent 70%),
+      radial-gradient(35rem 14rem at 50% 60%, rgba(94, 230, 255, 0.15), transparent 70%);
+    animation: introPulse var(--intro-duration, 2800ms) ease-in-out forwards;
+  }
+
+  .nebula-wordmark {
+    @apply uppercase leading-none select-none;
+    font-family: 'Bebas Neue', 'Poppins', 'Manrope', system-ui, sans-serif;
+    font-weight: 700;
+    transform: skewX(-6deg) scaleX(1.02);
+    letter-spacing: 0.16em;
+  }
+
+  .nebula-wordmark--sm {
+    letter-spacing: 0.12em;
+  }
+
+  .nebula-wordmark--md {
+    letter-spacing: 0.16em;
+  }
+
+  .nebula-wordmark--lg {
+    letter-spacing: 0.2em;
+  }
+
+  .nebula-wordmark__text {
+    display: inline-block;
+    background: linear-gradient(180deg, #ff5a5f 0%, #e50914 55%, #b70710 100%);
+    -webkit-background-clip: text;
+    color: transparent;
+    text-shadow:
+      0 14px 28px rgba(229, 9, 20, 0.35),
+      0 2px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  .nebula-wordmark__text--accent {
+    margin-left: 0.14em;
+    background: linear-gradient(180deg, #ffd1d5 0%, #ff6b8a 35%, #e50914 100%);
+    -webkit-background-clip: text;
+    color: transparent;
+    text-shadow:
+      0 12px 26px rgba(229, 9, 20, 0.35),
+      0 3px 0 rgba(255, 255, 255, 0.08);
+  }
+}
+
+@keyframes introFade {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes introScale {
+  0% {
+    transform: scale(0.88) translateY(6px);
+    opacity: 0;
+  }
+  20% {
+    transform: scale(1.02) translateY(0);
+    opacity: 1;
+  }
+  70% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.05) translateY(-4px);
+    opacity: 0;
+  }
+}
+
+@keyframes introPulse {
+  0% {
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
   }
 }
 

@@ -14,15 +14,11 @@ from core.logging import get_logger
 from core.config import settings
 from schemas.stream import StreamSource
 from services.cache import cache_service
+from services.scraper_engine import scrape_streams, scrape_tv_streams
 from services.providers import (
-    vidsrc_streams,
     vidsrc_resolver_streams,
-    vidcloud_streams,
-    superembed_streams,
-    twoembed_streams,
-    vidlink_streams,
+    vidsrc_resolver_tv_streams,
 )
-from services.scraper_engine import scrape_streams
 
 logger = get_logger("stream_finder")
 
@@ -30,9 +26,27 @@ CACHE_TTL_SECONDS = 6 * 60 * 60
 VALIDATION_CONCURRENCY = 6
 
 
-async def validate_stream(url: str, client: httpx.AsyncClient) -> bool:
+def _coerce_streams(raw: Iterable[StreamSource | dict]) -> List[StreamSource]:
+    normalized: List[StreamSource] = []
+    for item in raw:
+        if isinstance(item, StreamSource):
+            normalized.append(item)
+            continue
+        if isinstance(item, dict):
+            try:
+                normalized.append(StreamSource(**item))
+            except Exception as exc:
+                logger.warning("stream.coerce_failed", error=str(exc), payload=item)
+    return normalized
+
+
+async def validate_stream(
+    url: str,
+    client: httpx.AsyncClient,
+    headers: dict | None = None,
+) -> bool:
     try:
-        response = await client.head(url, follow_redirects=True)
+        response = await client.head(url, follow_redirects=True, headers=headers)
     except Exception as exc:
         logger.warning("stream.validate_head_error", url=url, error=str(exc))
         response = None
@@ -50,9 +64,12 @@ async def validate_stream(url: str, client: httpx.AsyncClient) -> bool:
         return False
 
     try:
+        request_headers = {"Range": "bytes=0-0"}
+        if headers:
+            request_headers.update(headers)
         response = await client.get(
             url,
-            headers={"Range": "bytes=0-0"},
+            headers=request_headers,
             follow_redirects=True,
         )
     except Exception as exc:
@@ -74,7 +91,7 @@ async def _validate_streams(streams: List[StreamSource], client: httpx.AsyncClie
 
     async def _validate(stream: StreamSource) -> StreamSource | None:
         async with semaphore:
-            ok = await validate_stream(stream.url, client)
+            ok = await validate_stream(stream.url, client, stream.headers)
         logger.info(
             "stream.validate_result",
             url=stream.url,
@@ -104,7 +121,7 @@ async def find_streams(tmdb_id: int) -> List[StreamSource]:
     cached = await cache_service.get(cache_key)
     if cached:
         logger.info("stream.finder_cache_hit", tmdb_id=tmdb_id)
-        return cached
+        return _coerce_streams(cached)
 
     logger.info("stream.finder_start", tmdb_id=tmdb_id)
 
@@ -114,11 +131,6 @@ async def find_streams(tmdb_id: int) -> List[StreamSource]:
     ) as client:
         provider_tasks = [
             vidsrc_resolver_streams(tmdb_id, client=client),
-            vidsrc_streams(tmdb_id, client=client),
-            vidcloud_streams(tmdb_id, client=client),
-            superembed_streams(tmdb_id, client=client),
-            twoembed_streams(tmdb_id, client=client),
-            vidlink_streams(tmdb_id, client=client),
         ]
 
         provider_results = await asyncio.gather(*provider_tasks, return_exceptions=True)
@@ -130,18 +142,16 @@ async def find_streams(tmdb_id: int) -> List[StreamSource]:
                 continue
             discovered.extend(result)
 
-        if settings.STREAM_SCRAPER_ENABLED:
-            try:
-                scraper_results = await scrape_streams(tmdb_id)
-                discovered.extend(scraper_results)
-            except Exception as exc:
-                logger.warning("stream.scraper_error", tmdb_id=tmdb_id, error=str(exc))
-
-        if not discovered:
+        direct_only = [stream for stream in discovered if stream.stream_type != "embed"]
+        if not direct_only:
             logger.info("stream.finder_no_candidates", tmdb_id=tmdb_id)
-            return []
+            logger.info("stream.finder_fallback_scraper", tmdb_id=tmdb_id)
+            discovered = await scrape_streams(tmdb_id)
+            direct_only = [stream for stream in discovered if stream.stream_type != "embed"]
+            if not direct_only:
+                return []
 
-        deduped = _dedupe_streams(discovered)
+        deduped = _dedupe_streams(direct_only)
         logger.info(
             "stream.finder_candidates",
             tmdb_id=tmdb_id,
@@ -159,5 +169,71 @@ async def find_streams(tmdb_id: int) -> List[StreamSource]:
         )
     else:
         logger.info("stream.finder_empty", tmdb_id=tmdb_id)
+
+    return validated
+
+
+async def find_tv_streams(tmdb_id: int, season: int, episode: int) -> List[StreamSource]:
+    cache_key = f"stream:tv:{tmdb_id}:{season}:{episode}"
+    cached = await cache_service.get(cache_key)
+    if cached:
+        logger.info("stream.finder_cache_hit", tmdb_id=tmdb_id, season=season, episode=episode)
+        return _coerce_streams(cached)
+
+    logger.info("stream.finder_start", tmdb_id=tmdb_id, season=season, episode=episode)
+
+    async with httpx.AsyncClient(
+        timeout=15.0,
+        verify=not settings.STREAM_PROVIDER_SKIP_SSL_VERIFY,
+    ) as client:
+        provider_tasks = [
+            vidsrc_resolver_tv_streams(tmdb_id, season, episode, client=client),
+        ]
+
+        provider_results = await asyncio.gather(*provider_tasks, return_exceptions=True)
+
+        discovered: List[StreamSource] = []
+        for result in provider_results:
+            if isinstance(result, Exception):
+                logger.warning("stream.provider_error", error=str(result))
+                continue
+            discovered.extend(result)
+
+        direct_only = [stream for stream in discovered if stream.stream_type != "embed"]
+        if not direct_only:
+            logger.info("stream.finder_no_candidates", tmdb_id=tmdb_id, season=season, episode=episode)
+            logger.info(
+                "stream.finder_fallback_scraper",
+                tmdb_id=tmdb_id,
+                season=season,
+                episode=episode,
+            )
+            discovered = await scrape_tv_streams(tmdb_id, season, episode)
+            direct_only = [stream for stream in discovered if stream.stream_type != "embed"]
+            if not direct_only:
+                return []
+
+        deduped = _dedupe_streams(direct_only)
+        logger.info(
+            "stream.finder_candidates",
+            tmdb_id=tmdb_id,
+            season=season,
+            episode=episode,
+            count=len(deduped),
+        )
+
+        validated = await _validate_streams(deduped, client)
+
+    if validated:
+        await cache_service.set(cache_key, validated, ttl=CACHE_TTL_SECONDS)
+        logger.info(
+            "stream.finder_success",
+            tmdb_id=tmdb_id,
+            season=season,
+            episode=episode,
+            count=len(validated),
+        )
+    else:
+        logger.info("stream.finder_empty", tmdb_id=tmdb_id, season=season, episode=episode)
 
     return validated

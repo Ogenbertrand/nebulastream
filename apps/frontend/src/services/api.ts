@@ -4,6 +4,8 @@ import {
   Movie,
   MovieListItem,
   StreamResponse,
+  PlaybackSessionResponse,
+  Episode,
   User,
   UserProfile,
   WatchHistory,
@@ -155,6 +157,16 @@ export const searchApi = {
     return response.data;
   },
 
+  searchTv: async (
+    query: string,
+    page: number = 1
+  ): Promise<MovieListItem[]> => {
+    const response = await api.get(
+      `/search/tv?q=${encodeURIComponent(query)}&page=${page}`
+    );
+    return response.data;
+  },
+
   getSuggestions: async (
     query: string,
     limit: number = 5
@@ -165,9 +177,59 @@ export const searchApi = {
     return response.data;
   },
 
-  getGenres: async (): Promise<Genre[]> => {
-    const response = await api.get('/search/genres');
+  getGenres: async (type: 'movie' | 'tv' = 'movie'): Promise<Genre[]> => {
+    const response = await api.get(`/search/genres?type=${type}`);
     return response.data.genres;
+  },
+};
+
+// TV Shows API
+export const tvApi = {
+  getTrending: async (
+    timeWindow: 'day' | 'week' = 'week',
+    page: number = 1
+  ): Promise<MovieListItem[]> => {
+    const response = await api.get(`/tv/trending?time_window=${timeWindow}&page=${page}`);
+    return response.data;
+  },
+
+  getPopular: async (page: number = 1): Promise<MovieListItem[]> => {
+    const response = await api.get(`/tv/popular?page=${page}`);
+    return response.data;
+  },
+
+  getTopRated: async (page: number = 1): Promise<MovieListItem[]> => {
+    const response = await api.get(`/tv/top-rated?page=${page}`);
+    return response.data;
+  },
+
+  getOnTheAir: async (page: number = 1): Promise<MovieListItem[]> => {
+    const response = await api.get(`/tv/on-the-air?page=${page}`);
+    return response.data;
+  },
+
+  getByGenre: async (
+    genreId: number,
+    page: number = 1,
+    sortBy: string = 'popularity.desc'
+  ): Promise<MovieListItem[]> => {
+    const response = await api.get(`/tv/genres/${genreId}?page=${page}&sort_by=${sortBy}`);
+    return response.data;
+  },
+
+  getDetail: async (tvId: number): Promise<Movie> => {
+    const response = await api.get(`/tv/${tvId}`);
+    return response.data;
+  },
+
+  getRecommendations: async (tvId: number, page: number = 1): Promise<MovieListItem[]> => {
+    const response = await api.get(`/tv/${tvId}/recommendations?page=${page}`);
+    return response.data;
+  },
+
+  getSeason: async (tvId: number, seasonNumber: number): Promise<Episode[]> => {
+    const response = await api.get(`/tv/${tvId}/season/${seasonNumber}`);
+    return response.data;
   },
 };
 
@@ -178,6 +240,68 @@ export const streamsApi = {
     preferredQuality: string = '720p'
   ): Promise<StreamResponse> => {
     const response = await api.get(`/streams/${movieId}?preferred_quality=${preferredQuality}`);
+    return response.data;
+  },
+
+  getTvStreams: async (
+    tvId: number,
+    season: number,
+    episode: number,
+    preferredQuality: string = '720p'
+  ): Promise<StreamResponse> => {
+    const response = await api.get(
+      `/streams/tv/${tvId}?season=${season}&episode=${episode}&preferred_quality=${preferredQuality}`
+    );
+    return response.data;
+  },
+
+  createSession: async (
+    movieId: number,
+    preferredQuality: string = '720p',
+    preferredLanguage: string = 'en',
+    sourceUrl?: string,
+    headers?: Record<string, string>
+  ): Promise<PlaybackSessionResponse> => {
+    const params: Record<string, string> = {
+      preferred_quality: preferredQuality,
+      preferred_language: preferredLanguage,
+    };
+    const body: Record<string, any> = {};
+    if (sourceUrl) {
+      body.source_url = sourceUrl;
+    }
+    if (headers && Object.keys(headers).length > 0) {
+      body.headers = headers;
+    }
+
+    const response = await api.post(`/streams/${movieId}/session`, body, { params });
+    return response.data;
+  },
+
+  createTvSession: async (
+    tvId: number,
+    season: number,
+    episode: number,
+    preferredQuality: string = '720p',
+    preferredLanguage: string = 'en',
+    sourceUrl?: string,
+    headers?: Record<string, string>
+  ): Promise<PlaybackSessionResponse> => {
+    const params: Record<string, string | number> = {
+      preferred_quality: preferredQuality,
+      preferred_language: preferredLanguage,
+      season,
+      episode,
+    };
+    const body: Record<string, any> = {};
+    if (sourceUrl) {
+      body.source_url = sourceUrl;
+    }
+    if (headers && Object.keys(headers).length > 0) {
+      body.headers = headers;
+    }
+
+    const response = await api.post(`/streams/tv/${tvId}/session`, body, { params });
     return response.data;
   },
 

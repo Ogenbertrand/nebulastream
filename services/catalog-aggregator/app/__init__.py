@@ -1,0 +1,1 @@
+"""NebulaStream Catalog Aggregator package."""

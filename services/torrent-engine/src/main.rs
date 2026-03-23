@@ -55,12 +55,12 @@ async fn main() -> anyhow::Result<()> {
         .route("/health", get(health_check))
         .route("/torrents", post(add_torrent))
         .route("/torrents", get(list_torrents))
-        .route("/torrents/:id", get(get_torrent))
-        .route("/torrents/:id", post(control_torrent))
-        .route("/torrents/:id/delete", post(delete_torrent))
+        .route("/torrents/{id}", get(get_torrent))
+        .route("/torrents/{id}", post(control_torrent))
+        .route("/torrents/{id}/delete", post(delete_torrent))
         .route("/stream", post(create_stream))
-        .route("/stream/:id", get(get_stream))
-        .route("/stream/:id/status", get(get_stream_status))
+        .route("/stream/{id}", get(get_stream))
+        .route("/stream/{id}/status", get(get_stream_status))
         .layer(tower_http::cors::CorsLayer::permissive())
         .layer(tower_http::trace::TraceLayer::new_for_http())
         .with_state(state);
@@ -92,9 +92,9 @@ async fn root() -> impl IntoResponse {
         "endpoints": {
             "/health": "Health check",
             "/torrents": "List/Add torrents",
-            "/torrents/:id": "Get/Control torrent",
+            "/torrents/{id}": "Get/Control torrent",
             "/stream": "Create stream from torrent",
-            "/stream/:id": "Access stream"
+            "/stream/{id}": "Access stream"
         }
     }))
 }
