@@ -48,9 +48,7 @@ const Search: React.FC = () => {
         return bDate - aDate;
       });
 
-      const withImages = merged.filter(
-        (item) => item.poster_path || item.backdrop_path
-      );
+      const withImages = merged.filter((item) => item.poster_path || item.backdrop_path);
       setMovies(withImages);
     } catch (error) {
       console.error('Search failed:', error);

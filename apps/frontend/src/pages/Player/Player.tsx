@@ -116,7 +116,12 @@ const Player: React.FC = () => {
         let streamData: StreamResponse;
         try {
           streamData = isTv
-            ? await streamsApi.getTvStreams(contentId, seasonNumber, episodeNumber, preferredQuality)
+            ? await streamsApi.getTvStreams(
+                contentId,
+                seasonNumber,
+                episodeNumber,
+                preferredQuality
+              )
             : await streamsApi.getStreams(contentId, preferredQuality);
         } catch (streamError) {
           console.warn('Failed to fetch streams:', streamError);

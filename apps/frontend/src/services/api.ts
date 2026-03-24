@@ -157,13 +157,8 @@ export const searchApi = {
     return response.data;
   },
 
-  searchTv: async (
-    query: string,
-    page: number = 1
-  ): Promise<MovieListItem[]> => {
-    const response = await api.get(
-      `/search/tv?q=${encodeURIComponent(query)}&page=${page}`
-    );
+  searchTv: async (query: string, page: number = 1): Promise<MovieListItem[]> => {
+    const response = await api.get(`/search/tv?q=${encodeURIComponent(query)}&page=${page}`);
     return response.data;
   },
 

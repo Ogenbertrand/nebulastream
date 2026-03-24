@@ -205,9 +205,7 @@ const TVDetail: React.FC = () => {
                       {show.runtime}m
                     </span>
                   )}
-                  {show.number_of_seasons && (
-                    <span>{show.number_of_seasons} seasons</span>
-                  )}
+                  {show.number_of_seasons && <span>{show.number_of_seasons} seasons</span>}
                 </div>
 
                 <div className="flex flex-wrap gap-2 mb-4 sm:mb-6">
@@ -278,7 +276,9 @@ const TVDetail: React.FC = () => {
                 </div>
 
                 {loadingEpisodes ? (
-                  <div className="glass-panel rounded-3xl p-6 text-white/70">Loading episodes...</div>
+                  <div className="glass-panel rounded-3xl p-6 text-white/70">
+                    Loading episodes...
+                  </div>
                 ) : episodes.length === 0 ? (
                   <div className="glass-panel rounded-3xl p-6 text-white/70">
                     Episodes are not available yet.

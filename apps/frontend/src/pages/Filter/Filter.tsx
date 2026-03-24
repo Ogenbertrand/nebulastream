@@ -156,7 +156,11 @@ const Filter: React.FC = () => {
           </div>
 
           <h2 className="text-white font-semibold mb-3 text-sm">
-            {tab === 'tv' ? 'Watch TV Shows' : tab === 'animation' ? 'Watch Animation' : 'Watch Movies'}
+            {tab === 'tv'
+              ? 'Watch TV Shows'
+              : tab === 'animation'
+                ? 'Watch Animation'
+                : 'Watch Movies'}
           </h2>
 
           {loading ? (

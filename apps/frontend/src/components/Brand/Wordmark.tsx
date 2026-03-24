@@ -16,9 +16,7 @@ const sizeClasses: Record<WordmarkSize, string> = {
 const Wordmark: React.FC<WordmarkProps> = ({ size = 'md', className }) => {
   return (
     <span
-      className={`nebula-wordmark nebula-wordmark--${size} ${sizeClasses[size]} ${
-        className || ''
-      }`}
+      className={`nebula-wordmark nebula-wordmark--${size} ${sizeClasses[size]} ${className || ''}`}
     >
       <span className="nebula-wordmark__text">NEBULA</span>
       <span className="nebula-wordmark__text nebula-wordmark__text--accent">STREAM</span>

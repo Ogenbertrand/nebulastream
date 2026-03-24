@@ -20,9 +20,15 @@ const Hero: React.FC = () => {
     const fetchFeatured = async () => {
       try {
         const trending = await moviesApi.getTrending('week', 1);
-        if (trending.length > 0) {
-          const randomIndex = Math.floor(Math.random() * Math.min(6, trending.length));
-          setFeaturedMovie(trending[randomIndex]);
+        const minYear = 2009;
+        const eligible = trending.filter((movie) => {
+          if (!movie.release_date) return false;
+          const year = new Date(movie.release_date).getFullYear();
+          return year >= minYear;
+        });
+        if (eligible.length > 0) {
+          const randomIndex = Math.floor(Math.random() * Math.min(6, eligible.length));
+          setFeaturedMovie(eligible[randomIndex]);
         }
       } catch (error) {
         console.error('Failed to fetch featured movie:', error);

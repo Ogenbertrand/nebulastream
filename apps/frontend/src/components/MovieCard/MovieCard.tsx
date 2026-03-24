@@ -39,7 +39,10 @@ const MovieCard: React.FC<MovieCardProps> = ({
 
   const fallbackLabel = useMemo(() => {
     const words = movie.title?.split(' ').filter(Boolean) || [];
-    const initials = words.slice(0, 2).map((w) => w[0]).join('');
+    const initials = words
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join('');
     return initials.toUpperCase() || 'NS';
   }, [movie.title]);
 
@@ -91,7 +94,6 @@ const MovieCard: React.FC<MovieCardProps> = ({
               {movie.vote_average.toFixed(1)}
             </span>
           </div>
-
         </div>
 
         <div className="mt-1">

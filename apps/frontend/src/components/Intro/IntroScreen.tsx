@@ -10,7 +10,9 @@ interface IntroScreenProps {
 }
 
 const playTone = async () => {
-  const AudioCtx = window.AudioContext || (window as typeof window & { webkitAudioContext?: any }).webkitAudioContext;
+  const AudioCtx =
+    window.AudioContext ||
+    (window as typeof window & { webkitAudioContext?: any }).webkitAudioContext;
   if (!AudioCtx) {
     return;
   }
@@ -54,7 +56,10 @@ const IntroScreen: React.FC<IntroScreenProps> = ({
   soundUrl,
   logo,
 }) => {
-  const style = useMemo(() => ({ ['--intro-duration' as string]: `${durationMs}ms` }), [durationMs]);
+  const style = useMemo(
+    () => ({ ['--intro-duration' as string]: `${durationMs}ms` }),
+    [durationMs]
+  );
 
   useEffect(() => {
     let audio: HTMLAudioElement | null = null;

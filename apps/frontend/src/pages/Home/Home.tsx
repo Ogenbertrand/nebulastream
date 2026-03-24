@@ -17,6 +17,14 @@ const shuffleMovies = <T,>(items: T[]) => {
   return copy;
 };
 
+const MIN_RELEASE_YEAR = 2009;
+const filterRecentMovies = (items: MovieListItem[]) =>
+  items.filter((item) => {
+    if (!item.release_date) return false;
+    const year = new Date(item.release_date).getFullYear();
+    return year >= MIN_RELEASE_YEAR;
+  });
+
 const stablePage = () => 1;
 
 const Home: React.FC = () => {
@@ -72,19 +80,19 @@ const Home: React.FC = () => {
         const tasks: Promise<void>[] = [
           moviesApi
             .getByGenre(actionId, stablePage())
-            .then((data) => setActionMovies(shuffleMovies(data)))
+            .then((data) => setActionMovies(shuffleMovies(filterRecentMovies(data))))
             .catch((error) => console.error('Failed to load action movies:', error)),
           moviesApi
             .getByGenre(comedyId, stablePage())
-            .then((data) => setComedyMovies(shuffleMovies(data)))
+            .then((data) => setComedyMovies(shuffleMovies(filterRecentMovies(data))))
             .catch((error) => console.error('Failed to load comedy movies:', error)),
           moviesApi
             .getByGenre(dramaId, stablePage())
-            .then((data) => setDramaMovies(shuffleMovies(data)))
+            .then((data) => setDramaMovies(shuffleMovies(filterRecentMovies(data))))
             .catch((error) => console.error('Failed to load drama movies:', error)),
           moviesApi
             .getNowPlaying(stablePage())
-            .then((data) => setRecentMovies(shuffleMovies(data)))
+            .then((data) => setRecentMovies(shuffleMovies(filterRecentMovies(data))))
             .catch((error) => console.error('Failed to load recent movies:', error)),
           tvApi
             .getOnTheAir(stablePage())
@@ -96,31 +104,31 @@ const Home: React.FC = () => {
             .catch((error) => console.error('Failed to load TV series for you:', error)),
           moviesApi
             .getByOriginCountry('US', stablePage())
-            .then((data) => setHollywoodMovies(shuffleMovies(data)))
+            .then((data) => setHollywoodMovies(shuffleMovies(filterRecentMovies(data))))
             .catch((error) => console.error('Failed to load Hollywood movies:', error)),
           moviesApi
             .getByOriginCountry('IN', stablePage())
-            .then((data) => setBollywoodMovies(shuffleMovies(data)))
+            .then((data) => setBollywoodMovies(shuffleMovies(filterRecentMovies(data))))
             .catch((error) => console.error('Failed to load Bollywood movies:', error)),
           moviesApi
             .getByOriginCountry('NG', stablePage())
-            .then((data) => setNollywoodMovies(shuffleMovies(data)))
+            .then((data) => setNollywoodMovies(shuffleMovies(filterRecentMovies(data))))
             .catch((error) => console.error('Failed to load Nollywood movies:', error)),
           moviesApi
             .getByOriginCountry('KR', stablePage())
-            .then((data) => setKoreanMovies(shuffleMovies(data)))
+            .then((data) => setKoreanMovies(shuffleMovies(filterRecentMovies(data))))
             .catch((error) => console.error('Failed to load Korean movies:', error)),
           moviesApi
             .getByOriginCountry('JP', stablePage())
-            .then((data) => setJapaneseMovies(shuffleMovies(data)))
+            .then((data) => setJapaneseMovies(shuffleMovies(filterRecentMovies(data))))
             .catch((error) => console.error('Failed to load Japanese movies:', error)),
           moviesApi
             .getByOriginCountry('CN', stablePage())
-            .then((data) => setChineseMovies(shuffleMovies(data)))
+            .then((data) => setChineseMovies(shuffleMovies(filterRecentMovies(data))))
             .catch((error) => console.error('Failed to load Chinese movies:', error)),
           moviesApi
             .getByOriginCountry('JP', stablePage(), 16)
-            .then((data) => setAnimeMovies(shuffleMovies(data)))
+            .then((data) => setAnimeMovies(shuffleMovies(filterRecentMovies(data))))
             .catch((error) => console.error('Failed to load anime movies:', error)),
         ];
 
@@ -178,27 +186,34 @@ const Home: React.FC = () => {
   const shuffledTrending = useMemo(() => shuffleMovies(trending), [trending]);
   const shuffledPopular = useMemo(() => shuffleMovies(popular), [popular]);
   const shuffledTopRated = useMemo(() => shuffleMovies(topRated), [topRated]);
+  const filteredTrending = useMemo(() => filterRecentMovies(shuffledTrending), [shuffledTrending]);
+  const filteredPopular = useMemo(() => filterRecentMovies(shuffledPopular), [shuffledPopular]);
+  const filteredTopRated = useMemo(() => filterRecentMovies(shuffledTopRated), [shuffledTopRated]);
 
   const combinedTrending = useMemo(() => {
     const currentYear = new Date().getFullYear();
-    const movies = shuffledTrending.map((item) => ({ ...item, media_type: 'movie' as const }));
+    const movies = filteredTrending.map((item) => ({ ...item, media_type: 'movie' as const }));
     const shows = trendingTv.map((item) => ({ ...item, media_type: 'tv' as const }));
     const merged = [...movies, ...shows].filter((item) => {
-      const dateValue =
-        item.release_date || (item as { first_air_date?: string }).first_air_date;
+      const dateValue = item.release_date || (item as { first_air_date?: string }).first_air_date;
       if (!dateValue) return false;
       const year = new Date(dateValue).getFullYear();
       return year === currentYear;
     });
     merged.sort((a, b) => {
-      const aDateValue =
-        a.release_date || (a as { first_air_date?: string }).first_air_date;
-      const bDateValue =
-        b.release_date || (b as { first_air_date?: string }).first_air_date;
+      const aDateValue = a.release_date || (a as { first_air_date?: string }).first_air_date;
+      const bDateValue = b.release_date || (b as { first_air_date?: string }).first_air_date;
       const aDate = aDateValue ? new Date(aDateValue).getTime() : 0;
       const bDate = bDateValue ? new Date(bDateValue).getTime() : 0;
       return bDate - aDate;
     });
+    const tvHighlights = merged.filter((item) => item.media_type === 'tv').slice(0, 6);
+    const tvHighlightKeys = new Set(
+      tvHighlights.map((item) => `${item.media_type || 'movie'}-${item.id}`)
+    );
+    const mergedRest = merged.filter(
+      (item) => !tvHighlightKeys.has(`${item.media_type || 'movie'}-${item.id}`)
+    );
     const hollywood = hollywoodMovies
       .map((item) => ({ ...item, media_type: 'movie' as const }))
       .filter((item) => {
@@ -220,8 +235,8 @@ const Home: React.FC = () => {
         return true;
       });
 
-    return [...addUnique(hollywood), ...addUnique(merged)];
-  }, [shuffledTrending, trendingTv, hollywoodMovies]);
+    return [...addUnique(hollywood), ...addUnique(tvHighlights), ...addUnique(mergedRest)];
+  }, [filteredTrending, trendingTv, hollywoodMovies]);
 
   const combinedLatest = useMemo(() => {
     const movies = recentMovies.map((item) => ({ ...item, media_type: 'movie' as const }));
@@ -235,7 +250,7 @@ const Home: React.FC = () => {
     return merged;
   }, [recentMovies, recentTv]);
 
-  const continueWatchingMovies = continueWatching.map((item) => item.movie);
+  const continueWatchingMovies = filterRecentMovies(continueWatching.map((item) => item.movie));
 
   return (
     <>
@@ -340,13 +355,13 @@ const Home: React.FC = () => {
           />
           <MovieRow
             title="Popular on NebulaStream"
-            movies={shuffledPopular}
+            movies={filteredPopular}
             loading={popularLoading}
             genreMap={genreMap}
           />
           <MovieRow
             title="Top Rated"
-            movies={shuffledTopRated}
+            movies={filteredTopRated}
             loading={topRatedLoading}
             genreMap={genreMap}
           />
