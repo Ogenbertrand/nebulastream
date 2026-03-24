@@ -240,13 +240,7 @@ const MovieDetail: React.FC = () => {
                     ) : (
                       <>
                         <Plus className="w-5 h-5 mr-2" />
-                        {isUpdatingFavorite ? (
-                          <>
-                            Adding...
-                          </>
-                        ) : (
-                          'Add to List'
-                        )}
+                        {isUpdatingFavorite ? <>Adding...</> : 'Add to List'}
                       </>
                     )}
                   </button>

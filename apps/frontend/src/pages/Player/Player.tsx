@@ -494,12 +494,12 @@ const Player: React.FC = () => {
                       </div>
                     </div>
 
-                    {(!isTv && movie.overview) && (
+                    {!isTv && movie.overview && (
                       <p className="mt-4 text-sm sm:text-base text-white/70 leading-relaxed">
                         {movie.overview}
                       </p>
                     )}
-                    {(isTv && episode?.overview) && (
+                    {isTv && episode?.overview && (
                       <p className="mt-4 text-sm sm:text-base text-white/70 leading-relaxed">
                         {episode.overview}
                       </p>
