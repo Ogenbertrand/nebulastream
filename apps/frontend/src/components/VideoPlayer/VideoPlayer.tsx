@@ -554,13 +554,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative w-full aspect-video bg-black rounded-2xl sm:rounded-3xl overflow-hidden group player-container"
+      className="relative w-full aspect-video bg-black rounded-none sm:rounded-3xl overflow-hidden group player-container"
     >
       {isEmbedSource ? (
         <iframe
           title={`Stream - ${selectedSource.provider_name}`}
           src={selectedSource.url}
-          className="w-full h-full"
+          className="w-full h-full object-cover"
           allow="autoplay; fullscreen; picture-in-picture"
           allowFullScreen
           referrerPolicy="no-referrer-when-downgrade"
@@ -568,7 +568,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       ) : (
         <video
           ref={videoRef}
-          className="w-full h-full"
+          className="w-full h-full object-cover"
           poster={backdropUrl || posterUrl}
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
@@ -738,7 +738,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       )}
 
       {showSettings && (
-        <div className="absolute bottom-20 sm:bottom-24 right-4 sm:right-6 glass-panel rounded-2xl p-4 w-52 sm:w-60">
+        <div className="absolute left-3 right-3 bottom-16 sm:bottom-24 sm:left-auto sm:right-6 glass-panel rounded-2xl p-4 w-auto sm:w-60 max-h-[60vh] overflow-auto z-50">
           <div className="space-y-4 text-sm text-white/80">
             {qualityOptions.length > 0 && (
               <div>

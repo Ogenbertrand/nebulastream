@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Play, Plus, Check, Star, Clock, Calendar, ArrowLeft, Share2 } from 'lucide-react';
+import { Play, Plus, Check, Star, Clock, Calendar, ArrowLeft, Share2, Loader2 } from 'lucide-react';
 import { moviesApi, userApi } from '../../services/api';
 import { Movie, MovieListItem } from '../../types';
 import MovieRow from '../../components/MovieRow/MovieRow';
@@ -17,6 +17,7 @@ const MovieDetail: React.FC = () => {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isUpdatingFavorite, setIsUpdatingFavorite] = useState(false);
   const [recommendations, setRecommendations] = useState<MovieListItem[]>([]);
 
   const renderCastCard = (actor: any) => (
@@ -71,7 +72,10 @@ const MovieDetail: React.FC = () => {
 
     if (!movie) return;
 
+    if (isUpdatingFavorite) return;
+
     try {
+      setIsUpdatingFavorite(true);
       if (isFavorite) {
         await userApi.removeFavorite(movie.id);
         setIsFavorite(false);
@@ -83,6 +87,8 @@ const MovieDetail: React.FC = () => {
       }
     } catch (error) {
       toast.error('Failed to update favorites');
+    } finally {
+      setIsUpdatingFavorite(false);
     }
   };
 
@@ -223,12 +229,24 @@ const MovieDetail: React.FC = () => {
                     {isFavorite ? (
                       <>
                         <Check className="w-5 h-5 mr-2" />
-                        In My List
+                        {isUpdatingFavorite ? (
+                          <>
+                            <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                          </>
+                        ) : (
+                          'In My List'
+                        )}
                       </>
                     ) : (
                       <>
                         <Plus className="w-5 h-5 mr-2" />
-                        Add to List
+                        {isUpdatingFavorite ? (
+                          <>
+                            Adding...
+                          </>
+                        ) : (
+                          'Add to List'
+                        )}
                       </>
                     )}
                   </button>

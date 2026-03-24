@@ -136,17 +136,21 @@ const Watchlist: React.FC = () => {
             </div>
 
             {favorites.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-5">
                 {favorites.map((favorite) => (
                   <div key={favorite.movie_id} className="relative group">
-                    <div className="aspect-poster bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl flex flex-col items-center justify-center gap-3 border border-white/5">
-                      <div className="w-12 h-12 rounded-full bg-nebula-500/20 flex items-center justify-center">
-                        <Heart className="w-6 h-6 text-nebula-500" />
+                    {favorite.movie ? (
+                      <MovieCard movie={favorite.movie} />
+                    ) : (
+                      <div className="aspect-poster bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl flex flex-col items-center justify-center gap-3 border border-white/5">
+                        <div className="w-12 h-12 rounded-full bg-nebula-500/20 flex items-center justify-center">
+                          <Heart className="w-6 h-6 text-nebula-500" />
+                        </div>
+                        <span className="text-xs text-white/60 px-3 text-center">
+                          Favorite #{favorite.movie_id}
+                        </span>
                       </div>
-                      <span className="text-xs text-white/60 px-3 text-center">
-                        Favorite #{favorite.movie_id}
-                      </span>
-                    </div>
+                    )}
                     <button
                       onClick={() => handleRemoveFavorite(favorite.movie_id)}
                       className="absolute top-2 right-2 p-2 bg-dark-900/90 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"

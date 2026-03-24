@@ -295,10 +295,12 @@ const Browse: React.FC = () => {
                     const active = selectedCategory === key;
 
                     const handleClick = () => {
-                      setSelectedCategory(key as typeof selectedCategory);
                       if (key === 'all') {
-                        handleGenreChange(null);
+                        navigate('/filter');
+                        return;
                       }
+
+                      setSelectedCategory(key as typeof selectedCategory);
                     };
 
                     const bgImage = (categoryBackgrounds as Record<string, string | undefined>)[

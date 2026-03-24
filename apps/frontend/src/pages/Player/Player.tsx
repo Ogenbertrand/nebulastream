@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
 import Loading from '../../components/Loading/Loading';
+import MovieRow from '../../components/MovieRow/MovieRow';
 import { moviesApi, streamsApi, tvApi, watchHistoryApi } from '../../services/api';
 import { Episode, Movie, StreamResponse, StreamSource } from '../../types';
 import toast from 'react-hot-toast';
@@ -15,6 +16,28 @@ const Player: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const renderCastCard = (actor: any) => (
+    <div key={actor.id} className="text-center">
+      <div className="aspect-square rounded-2xl overflow-hidden mb-2 bg-dark-800 border border-white/5">
+        {actor.profile_path ? (
+          <img
+            src={actor.profile_path}
+            alt={actor.name}
+            className="w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="text-white/40 text-xs">No Photo</span>
+          </div>
+        )}
+      </div>
+      <p className="text-white text-sm font-medium line-clamp-1">{actor.name}</p>
+      <p className="text-white/50 text-xs line-clamp-1">{actor.character}</p>
+    </div>
+  );
 
   const searchParams = new URLSearchParams(location.search);
   const isTv = location.pathname.includes('/watch/tv');
@@ -399,8 +422,8 @@ const Player: React.FC = () => {
             </button>
           </div>
 
-          <div className="min-h-screen flex items-center justify-center px-4 pb-20 sm:pb-24 pt-20">
-            <div className="w-full max-w-6xl 2xl:max-w-screen-2xl mx-auto">
+          <div className="min-h-screen flex flex-col items-stretch justify-start px-0 sm:px-4 pb-20 sm:pb-24 pt-20 sm:pt-20">
+            <div className="w-screen sm:w-full max-w-none sm:max-w-6xl 2xl:max-w-screen-2xl sm:mx-auto px-0 mt-2 sm:mt-0">
               <Suspense fallback={<Loading message="Loading player..." />}>
                 <VideoPlayer
                   key={`${id}-${isTv ? `tv-${seasonNumber}-${episodeNumber}` : 'movie'}`}
@@ -416,33 +439,88 @@ const Player: React.FC = () => {
                 />
               </Suspense>
             </div>
-          </div>
 
-          {movie && (
-            <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent p-4 sm:p-6">
-              <div className="max-w-6xl 2xl:max-w-screen-2xl mx-auto">
-                <h1 className="text-lg sm:text-2xl font-display font-bold text-white">
-                  {movie.title}
-                  {isTv && (
-                    <span className="text-white/60 text-sm sm:text-lg font-normal ml-2">
-                      S{seasonNumber}E{episodeNumber}
-                      {episode?.name ? ` · ${episode.name}` : ''}
-                    </span>
-                  )}
-                </h1>
-                {!isTv && movie.overview && (
-                  <p className="text-white/60 mt-2 line-clamp-2 max-w-2xl text-sm sm:text-base">
-                    {movie.overview}
-                  </p>
-                )}
-                {isTv && episode?.overview && (
-                  <p className="text-white/60 mt-2 line-clamp-2 max-w-2xl text-sm sm:text-base">
-                    {episode.overview}
-                  </p>
-                )}
+            {movie && (
+              <div className="w-screen sm:w-full max-w-none sm:max-w-6xl 2xl:max-w-screen-2xl sm:mx-auto px-4 sm:px-0 mt-5 sm:mt-8">
+                <div className="rounded-2xl bg-black/40 border border-white/10 backdrop-blur-md overflow-hidden">
+                  <div className="p-4 sm:p-6">
+                    <div className="flex gap-4">
+                      {movie.poster_path ? (
+                        <img
+                          src={movie.poster_path}
+                          alt={movie.title}
+                          className="w-20 sm:w-28 h-28 sm:h-40 object-cover rounded-xl bg-dark-900"
+                        />
+                      ) : (
+                        <div className="w-20 sm:w-28 h-28 sm:h-40 rounded-xl bg-dark-900" />
+                      )}
+
+                      <div className="min-w-0 flex-1">
+                        <h1 className="text-lg sm:text-2xl font-display font-bold text-white truncate">
+                          {movie.title}
+                        </h1>
+
+                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm text-white/60">
+                          {movie.release_date && <span>{movie.release_date.slice(0, 4)}</span>}
+                          {movie.runtime && <span>{movie.runtime} min</span>}
+                          {movie.vote_average !== undefined && (
+                            <span>{Number(movie.vote_average || 0).toFixed(1)} / 10</span>
+                          )}
+                          {isTv && (
+                            <span>
+                              S{seasonNumber}E{episodeNumber}
+                              {episode?.name ? ` · ${episode.name}` : ''}
+                            </span>
+                          )}
+                        </div>
+
+                        {movie.genres && movie.genres.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {movie.genres.slice(0, 4).map((genre) => (
+                              <span
+                                key={genre.id}
+                                className="px-2.5 py-1 rounded-full bg-white/10 text-xs text-white/70"
+                              >
+                                {genre.name}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {(!isTv && movie.overview) && (
+                      <p className="mt-4 text-sm sm:text-base text-white/70 leading-relaxed">
+                        {movie.overview}
+                      </p>
+                    )}
+                    {(isTv && episode?.overview) && (
+                      <p className="mt-4 text-sm sm:text-base text-white/70 leading-relaxed">
+                        {episode.overview}
+                      </p>
+                    )}
+
+                    {movie.cast && movie.cast.length > 0 && (
+                      <div className="mt-7 sm:mt-10">
+                        <h2 className="text-xl sm:text-2xl font-semibold text-white mb-5">Cast</h2>
+                        <div className="overflow-x-auto pb-3 -mx-1">
+                          <div className="grid grid-rows-2 auto-cols-[140px] grid-flow-col gap-3 px-1">
+                            {movie.cast.slice(0, 12).map((actor) => renderCastCard(actor))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {movie.similar && movie.similar.length > 0 && (
+                      <div className="mt-7 sm:mt-10">
+                        <MovieRow title="Similar Movies" movies={movie.similar} />
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </>
